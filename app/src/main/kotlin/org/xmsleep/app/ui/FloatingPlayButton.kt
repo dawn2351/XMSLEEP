@@ -368,7 +368,7 @@ fun FloatingPlayButtonNew(
     val contentHeightPx = with(density) { contentHeight.toPx() }
     
     // 限制Y轴范围（确保按钮不会超出屏幕，并避免被底部导航栏遮挡）
-    val bottomNavBarHeight = 88.dp // 底部导航栏高度（72dp）+ padding（16dp）
+    val bottomNavBarHeight = 50.dp // 底部导航栏避让高度（与底部导航栏间距50dp）
     val minY = 0f
     val maxY = screenHeightPx - buttonHeightPx - with(density) { bottomNavBarHeight.toPx() }
     val clampedY = offsetY.coerceIn(minY, maxY)

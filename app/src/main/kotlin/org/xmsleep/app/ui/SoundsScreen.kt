@@ -1183,13 +1183,13 @@ fun SoundsScreen(
             label = "presetPlayFABOffsetX"
         )
         
-        // 底部导航栏高度（72dp导航栏 + 16dp padding）
-        val bottomNavBarHeight = 88.dp
+        // 底部导航栏高度（调整后的避让高度）
+        val bottomNavBarHeight = 50.dp
         
-        // 预设播放FAB的底部间距（在倒计时FAB上方，距离底部导航栏30dp）
+        // 预设播放FAB的底部间距（在倒计时FAB上方，距离底部导航栏88dp）
         val presetPlayFABBottomPadding by animateDpAsState(
             targetValue = if (hasDefaultItems) {
-                bottomNavBarHeight + 30.dp // 距离底部导航栏30dp
+                bottomNavBarHeight + 88.dp // 距离底部导航栏88dp（补偿底部导航栏上移）
             } else {
                 0.dp // 没有预设时不显示
             },
@@ -1201,10 +1201,10 @@ fun SoundsScreen(
         val timerFABBottomPadding by animateDpAsState(
             targetValue = if (hasDefaultItems) {
                 // 有预设时：在预设播放FAB下方，间隔16dp
-                bottomNavBarHeight + 30.dp + 56.dp + 16.dp
+                bottomNavBarHeight + 88.dp + 56.dp + 16.dp
             } else {
-                // 没有预设时：距离底部导航栏30dp
-                bottomNavBarHeight + 30.dp
+                // 没有预设时：距离底部导航栏88dp
+                bottomNavBarHeight + 88.dp
             },
             animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
             label = "timerFABBottomPadding"

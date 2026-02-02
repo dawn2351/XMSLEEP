@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.materials.HazeMaterials
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -88,6 +89,9 @@ fun MainScreen(
     
     // Haze状态用于毛玻璃效果
     val hazeState = remember { HazeState() }
+    
+    // 底部导航栏的背景色（用于毛玻璃效果）
+    val navBarBackgroundColor = MaterialTheme.colorScheme.surface
     
     // 本地音频权限相关
     val requiredPermission = if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -706,12 +710,15 @@ fun MainScreen(
                         .fillMaxWidth()
                         .windowInsetsPadding(WindowInsets.navigationBars)
                         .padding(horizontal = 24.dp)
-                        .padding(bottom = 8.dp)
+                        .padding(bottom = 46.dp)
                         .clip(MaterialTheme.shapes.extraLarge)
                         .hazeChild(
-                            state = hazeState,
-                            style = HazeMaterials.regular()
-                        ),
+                            state = hazeState
+                        ) {
+                            blurRadius = 10.dp
+                            noiseFactor = 0.16f
+                            backgroundColor = navBarBackgroundColor
+                        },
                     color = Color.Transparent,
                     shape = MaterialTheme.shapes.extraLarge,
                     border = androidx.compose.foundation.BorderStroke(
