@@ -232,7 +232,7 @@ Issues and Pull Requests are welcome!
 
 **⭐ If this project helps you, please give it a Star!**
 
-© 2025 XMSLEEP. All rights reserved.
+© 2026 XMSLEEP. All rights reserved.
 
 </div>
 
