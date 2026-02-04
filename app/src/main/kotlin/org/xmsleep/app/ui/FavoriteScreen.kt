@@ -302,6 +302,17 @@ fun FavoriteScreen(
         }
     }
     
+    // 监听本地音频播放状态
+    LaunchedEffect(favoriteItems) {
+        while (true) {
+            delay(500)
+            favoriteItems.forEach { item ->
+                val isPlaying = audioManager.isPlayingSound(item.sound)
+                playingStates[item.sound] = isPlaying
+            }
+        }
+    }
+    
     // 滚动状态
     val scrollState = rememberLazyGridState()
     

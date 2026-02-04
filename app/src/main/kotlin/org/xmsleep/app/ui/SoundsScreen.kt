@@ -1543,10 +1543,12 @@ private fun DefaultArea(
                         .padding(horizontal = 16.dp, vertical = 0.dp)
                 ) {
             // 限制最多显示10个卡片（本地+远程总共最多10个）
+            // 只显示已添加到预设的远程音频
+            val pinnedRemoteSounds = remoteSounds.filter { remotePinned.contains(it.id) }
             val maxLocalItems = minOf(defaultItems.size, 10)
-            val maxRemoteItems = minOf(remoteSounds.size, 10 - maxLocalItems)
+            val maxRemoteItems = minOf(pinnedRemoteSounds.size, 10 - maxLocalItems)
             val displayedLocalItems = defaultItems.take(maxLocalItems)
-            val displayedRemoteSounds = remoteSounds.take(maxRemoteItems)
+            val displayedRemoteSounds = pinnedRemoteSounds.take(maxRemoteItems)
             val allDefaultItems = displayedLocalItems.size + displayedRemoteSounds.size
             
             // 空状态提示（当预设为空时显示）

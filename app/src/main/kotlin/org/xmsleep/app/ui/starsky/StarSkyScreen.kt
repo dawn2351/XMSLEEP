@@ -743,9 +743,9 @@ fun StarSkyScreen(
                                     // 未下载，不允许置顶
                                     Toast.makeText(context, context.getString(R.string.must_download_before_pin), Toast.LENGTH_SHORT).show()
                                 } else {
-                                    // 检查是否已达到最大数量（3个）
-                                    if (newSet.size >= 3) {
-                                        Toast.makeText(context, context.getString(R.string.max_3_sounds_limit), Toast.LENGTH_SHORT).show()
+                                    // 检查是否已达到最大数量（10个远程音频）
+                                    if (newSet.size >= 10) {
+                                        Toast.makeText(context, context.getString(R.string.preset_max_reached), Toast.LENGTH_SHORT).show()
                                     } else {
                                         newSet.add(sound.id)
                                         remotePinned = newSet
@@ -905,9 +905,9 @@ fun StarSkyScreen(
                                         // 未下载，不允许置顶
                                         Toast.makeText(context, context.getString(R.string.must_download_before_pin), Toast.LENGTH_SHORT).show()
                                     } else {
-                                        // 检查是否已达到最大数量（3个）
-                                        if (newSet.size >= 3) {
-                                            Toast.makeText(context, context.getString(R.string.max_3_sounds_limit), Toast.LENGTH_SHORT).show()
+                                        // 检查是否已达到最大数量（10个远程音频）
+                                        if (newSet.size >= 10) {
+                                            Toast.makeText(context, context.getString(R.string.preset_max_reached), Toast.LENGTH_SHORT).show()
                                         } else {
                                             newSet.add(sound.id)
                                             remotePinned = newSet
