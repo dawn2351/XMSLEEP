@@ -1,17 +1,13 @@
 package org.xmsleep.app.update
 
 import android.content.Context
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.xmsleep.app.utils.Logger
@@ -21,8 +17,7 @@ import java.io.IOException
 /**
  * 更新状态管理 ViewModel
  */
-class UpdateViewModel(private val context: Context) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+class UpdateViewModel(private val context: Context) : ViewModel() {
     
     // 从 BuildConfig 读取 GitHub Token（如果配置了）
     private val githubToken: String? = try {
@@ -74,7 +69,7 @@ class UpdateViewModel(private val context: Context) {
      * @param currentVersion 当前版本号
      */
     fun checkUpdate(currentVersion: String) {
-        scope.launch {
+        viewModelScope.launch {
             _updateState.value = UpdateState.Checking
             lastCheckTime = System.currentTimeMillis()
             Logger.d("UpdateCheck", "开始调用UpdateChecker.checkLatestVersion，当前版本: $currentVersion")
@@ -174,7 +169,7 @@ class UpdateViewModel(private val context: Context) {
     fun startDownload() {
         val version = _latestVersion ?: return
         
-        scope.launch {
+        viewModelScope.launch {
             _updateState.value = UpdateState.Downloading(0f)
             
             // 获取下载目录
@@ -187,13 +182,13 @@ class UpdateViewModel(private val context: Context) {
             var progressJob: Job? = null
             var stateJob: Job? = null
             
-            progressJob = scope.launch {
+            progressJob = viewModelScope.launch {
                 downloadProgress.collect { progress ->
                     _updateState.value = UpdateState.Downloading(progress)
                 }
             }
             
-            stateJob = scope.launch {
+            stateJob = viewModelScope.launch {
                 downloadState.collect { state ->
                     when (state) {
                         is DownloadState.Success -> {

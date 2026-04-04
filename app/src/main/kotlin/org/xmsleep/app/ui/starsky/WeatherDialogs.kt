@@ -35,41 +35,6 @@ fun WeatherEditDialog(
 ) {
     val ctx = LocalContext.current
     
-    // 声音ID到string resource的映射
-    fun getSoundNameResId(soundId: String): Int = when (soundId) {
-        "rain" -> R.string.weather_sound_rain
-        "light-rain" -> R.string.weather_sound_light_rain
-        "heavy-rain" -> R.string.weather_sound_heavy_rain
-        "thunderstorm" -> R.string.weather_sound_thunder
-        "wind" -> R.string.weather_sound_wind
-        "birds" -> R.string.weather_sound_birds
-        "river" -> R.string.weather_sound_river
-        "jungle" -> R.string.weather_sound_jungle
-        "campfire" -> R.string.weather_sound_fireplace
-        "waves" -> R.string.weather_sound_waves
-        "drizzle" -> R.string.weather_sound_drizzle
-        "walk-in-snow" -> R.string.weather_sound_walk_in_snow
-        "night-village" -> R.string.weather_sound_night
-        "crickets" -> R.string.weather_sound_crickets
-        "field" -> R.string.weather_sound_field
-        "lake" -> R.string.weather_sound_lake
-        "kitchen" -> R.string.weather_sound_kitchen
-        "wind-chimes" -> R.string.weather_sound_wind_chimes
-        "light-piano" -> R.string.weather_sound_light_piano
-        "rain-on-car-roof" -> R.string.weather_sound_rain_on_car_roof
-        "rain-on-umbrella" -> R.string.weather_sound_rain_on_umbrella
-        "rain-on-tent" -> R.string.weather_sound_rain_on_tent
-        "rain-on-leaves" -> R.string.weather_sound_rain_on_leaves
-        "rain-on-raincoat" -> R.string.weather_sound_rain_on_raincoat
-        "rain-on-windowsill" -> R.string.weather_sound_rain_on_windowsill
-        "rain-on-wooden-house" -> R.string.weather_sound_rain_on_wooden_house
-        "rain-while-driving" -> R.string.weather_sound_rain_while_driving
-        "rain-on-empty-street" -> R.string.weather_sound_rain_on_empty_street
-        "rain-on-eaves" -> R.string.weather_sound_rain_on_eaves
-        "heavy-rain-on-glass" -> R.string.weather_sound_heavy_rain_on_glass
-        else -> R.string.weather_sound_rain
-    }
-    
     // 可用音频列表（按分类组织）
     val availableSoundsMap = mapOf(
         ctx.getString(R.string.weather_category_nature) to listOf("field", "lake", "wind", "birds", "river", "jungle", "campfire", "waves", "night-village", "crickets", "walk-in-snow"),
@@ -208,7 +173,7 @@ fun WeatherEditDialog(
                                     }
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(ctx.getString(getSoundNameResId(soundId)))
+                                Text(ctx.getString(WeatherSoundMapper.getSoundNameResId(soundId)))
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))

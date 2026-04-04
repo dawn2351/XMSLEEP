@@ -1,7 +1,7 @@
 package org.xmsleep.app.audio
 
 import android.content.Context
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.xmsleep.app.utils.NetworkClient
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -42,10 +43,8 @@ class AudioCacheManager private constructor(context: Context) {
     
     private val appContext: Context = context.applicationContext
     private val cacheDir: File = File(appContext.cacheDir, CACHE_DIR_NAME)
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)  // 增加连接超时时间
-        .readTimeout(90, TimeUnit.SECONDS)    // 增加读取超时时间
-        .retryOnConnectionFailure(true)        // 启用连接失败重试
+    private val okHttpClient = NetworkClient.newBuilder()
+        .readTimeout(90, TimeUnit.SECONDS)    // 音频文件较大，使用更长的读取超时
         .build()
     
     init {
@@ -99,7 +98,7 @@ class AudioCacheManager private constructor(context: Context) {
         }
         
         // jsDelivr失败，回退到GitHub原始URL
-        Log.w(TAG, "jsDelivr下载失败，回退到GitHub原始URL: ${urlPair.githubUrl}")
+        Logger.w(TAG, "jsDelivr下载失败，回退到GitHub原始URL: ${urlPair.githubUrl}")
         return downloadAudioWithUrl(urlPair.githubUrl, soundId, "GitHub")
     }
     
@@ -192,7 +191,7 @@ class AudioCacheManager private constructor(context: Context) {
                     return@withContext Result.success(file)
                 } catch (e: Exception) {
                     lastException = e
-                    Log.w(TAG, "下载音频失败 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
+                    Logger.w(TAG, "下载音频失败 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
                     
                     // 如果不是最后一次尝试，等待后重试
                     if (attempt < MAX_RETRY_COUNT) {
@@ -203,7 +202,7 @@ class AudioCacheManager private constructor(context: Context) {
             }
             
             // 所有重试都失败
-            Log.e(TAG, "下载音频失败 (来源: $source)，已重试 $MAX_RETRY_COUNT 次: ${lastException?.message}")
+            Logger.e(TAG, "下载音频失败 (来源: $source)，已重试 $MAX_RETRY_COUNT 次: ${lastException?.message}")
             Result.failure(lastException ?: IOException("下载失败"))
         }
     }
@@ -256,7 +255,7 @@ class AudioCacheManager private constructor(context: Context) {
         
         // 如果jsDelivr失败，回退到GitHub原始URL
         if (shouldFallback && urlPair.jsDelivrUrl != urlPair.githubUrl) {
-            Log.w(TAG, "jsDelivr下载失败，回退到GitHub原始URL: ${urlPair.githubUrl}")
+            Logger.w(TAG, "jsDelivr下载失败，回退到GitHub原始URL: ${urlPair.githubUrl}")
             downloadAudioWithProgressAndUrl(urlPair.githubUrl, soundId, "GitHub").collect { fallbackProgress ->
                 emit(fallbackProgress)
             }
@@ -306,11 +305,11 @@ class AudioCacheManager private constructor(context: Context) {
                 if (!response.isSuccessful) {
                     val httpCode = response.code
                     val errorMsg = "下载失败: HTTP $httpCode"
-                    Log.w(TAG, "$errorMsg (来源: $source, URL: $url)")
+                    Logger.w(TAG, "$errorMsg (来源: $source, URL: $url)")
                     
                     // 对于 403/404 错误，立即失败，不重试（这些错误重试也没用）
                     if (httpCode == 403 || httpCode == 404) {
-                        Log.w(TAG, "HTTP $httpCode 错误，立即失败，不回退重试")
+                        Logger.w(TAG, "HTTP $httpCode 错误，立即失败，不回退重试")
                         throw NonRetryableException(errorMsg, httpCode)
                     }
                     
@@ -339,29 +338,29 @@ class AudioCacheManager private constructor(context: Context) {
                     }
                 }
                 
-                Log.d(TAG, "音频下载成功: $soundId (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT)")
+                Logger.d(TAG, "音频下载成功: $soundId (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT)")
                 emit(DownloadProgress.Success(file))
                 return@flow
             } catch (e: NonRetryableException) {
                 // 不可重试的错误（403/404），立即失败
-                Log.e(TAG, "不可重试的错误 (来源: $source): ${e.message}")
+                Logger.e(TAG, "不可重试的错误 (来源: $source): ${e.message}")
                 emit(DownloadProgress.Error(e))
                 return@flow
             } catch (e: Exception) {
                 lastException = e
-                Log.w(TAG, "下载音频失败 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
+                Logger.w(TAG, "下载音频失败 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
                 
                 // 如果不是最后一次尝试，等待后重试（仅对可重试的错误）
                 if (attempt < MAX_RETRY_COUNT) {
                     val delay = INITIAL_RETRY_DELAY * attempt // 递增延迟
                     delay(delay)
-                    Log.d(TAG, "等待 ${delay}ms 后重试...")
+                    Logger.d(TAG, "等待 ${delay}ms 后重试...")
                 }
             }
         }
         
         // 所有重试都失败
-        Log.e(TAG, "下载音频失败 (来源: $source)，已重试 $MAX_RETRY_COUNT 次: ${lastException?.message}")
+        Logger.e(TAG, "下载音频失败 (来源: $source)，已重试 $MAX_RETRY_COUNT 次: ${lastException?.message}")
         emit(DownloadProgress.Error(lastException ?: IOException("下载失败")))
     }.flowOn(Dispatchers.IO)
     
@@ -394,17 +393,17 @@ class AudioCacheManager private constructor(context: Context) {
                 if (deleted) {
                     currentSize -= fileSize
                     deletedFiles++
-                    Log.d(TAG, "删除缓存文件: ${oldestFile.name} (${fileSize / 1024 / 1024}MB)")
+                    Logger.d(TAG, "删除缓存文件: ${oldestFile.name} (${fileSize / 1024 / 1024}MB)")
                 } else {
-                    Log.w(TAG, "删除缓存文件失败: ${oldestFile.name}")
+                    Logger.w(TAG, "删除缓存文件失败: ${oldestFile.name}")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "删除缓存文件异常: ${oldestFile.name} - ${e.message}")
+                Logger.e(TAG, "删除缓存文件异常: ${oldestFile.name} - ${e.message}")
             }
         }
         
         if (deletedFiles > 0) {
-            Log.d(TAG, "缓存清理完成，删除了 $deletedFiles 个文件，当前大小: ${currentSize / 1024 / 1024}MB")
+            Logger.d(TAG, "缓存清理完成，删除了 $deletedFiles 个文件，当前大小: ${currentSize / 1024 / 1024}MB")
         }
     }
     

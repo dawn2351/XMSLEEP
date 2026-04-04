@@ -11,7 +11,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
+import android.telephony.PhoneStateListener
+import android.telephony.TelephonyManager
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -31,6 +32,13 @@ import kotlinx.coroutines.withContext
 /**
  * 全局音频管理器
  * 负责管理应用中的音频播放，支持多个音频同时播放
+ *
+ * TODO(重构): 此文件已超过 1900 行，职责过多，建议拆分为：
+ *  - AudioFocusManager  —— 音频焦点申请/放弃（~50行）
+ *  - LocalSoundPlayer   —— 本地内置声音播放逻辑（~800行）
+ *  - RemoteSoundPlayer  —— 远程在线声音播放逻辑（~600行）
+ *  - AudioManager       —— 保留对外 API，委托给上述子模块（~300行）
+ * 拆分前请先为关键方法补充单元测试。
  */
 class AudioManager private constructor() {
 
@@ -119,7 +127,7 @@ class AudioManager private constructor() {
             val binder = service as? MusicService.MusicServiceBinder
             musicService = binder?.getService()
             isServiceBound = true
-            Log.d(TAG, "MusicService 已连接")
+            Logger.d(TAG, "MusicService 已连接")
             
             // 连接后立即更新播放状态
             notifyServicePlayingStateChanged()
@@ -128,7 +136,7 @@ class AudioManager private constructor() {
         override fun onServiceDisconnected(name: ComponentName?) {
             musicService = null
             isServiceBound = false
-            Log.d(TAG, "MusicService 已断开")
+            Logger.d(TAG, "MusicService 已断开")
         }
     }
     
@@ -148,6 +156,13 @@ class AudioManager private constructor() {
     private var audioFocusRequest: AudioFocusRequest? = null
     private var hasAudioFocus = false
     
+    // 标记是否因来电而暂停（用于来电结束后自动恢复）
+    private var wasPausedByPhoneCall = false
+    
+    // 电话状态监听
+    private var phoneStateListener: PhoneStateListener? = null
+    private var telephonyManager: TelephonyManager? = null
+    
     // 音频焦点变化监听器
     private val audioFocusChangeListener = SystemAudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
@@ -156,6 +171,7 @@ class AudioManager private constructor() {
                 hasAudioFocus = false
             }
             SystemAudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // 临时失去焦点（如来电、通知），暂停所有声音
                 pauseAllSounds()
             }
             SystemAudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
@@ -164,9 +180,22 @@ class AudioManager private constructor() {
             SystemAudioManager.AUDIOFOCUS_GAIN -> {
                 restoreSoundVolume()
                 hasAudioFocus = true
+                // 来电结束后自动恢复播放
+                if (wasPausedByPhoneCall) {
+                    wasPausedByPhoneCall = false
+                    applicationContext?.let { context ->
+                        if (hasRecentSounds(context)) {
+                            playRecentSounds(context)
+                        }
+                    }
+                }
             }
         }
     }
+
+    // =========================================================================
+    // region 音频焦点管理
+    // =========================================================================
 
     /**
      * 请求音频焦点
@@ -221,7 +250,7 @@ class AudioManager private constructor() {
             }
             hasAudioFocus = false
         } catch (e: Exception) {
-            Log.e(TAG, "放弃音频焦点失败: ${e.message}")
+            Logger.e(TAG, "放弃音频焦点失败: ${e.message}")
         }
     }
 
@@ -246,6 +275,14 @@ class AudioManager private constructor() {
     /**
      * 初始化播放器
      */
+    // =========================================================================
+    // endregion
+    // =========================================================================
+
+    // =========================================================================
+    // region 本地声音播放（内置 OGG/WebP 音频）
+    // =========================================================================
+
     private fun initializePlayer(context: Context, sound: Sound) {
         if (players[sound] != null) {
             return
@@ -257,9 +294,9 @@ class AudioManager private constructor() {
             }
             players[sound] = player
             playingStates[sound] = false
-            Log.d(TAG, "${sound.name} 播放器初始化成功")
+            Logger.d(TAG, "${sound.name} 播放器初始化成功")
         } catch (e: Exception) {
-            Log.e(TAG, "初始化 ${sound.name} 播放器失败: ${e.message}")
+            Logger.e(TAG, "初始化 ${sound.name} 播放器失败: ${e.message}")
         }
     }
 
@@ -326,7 +363,7 @@ class AudioManager private constructor() {
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                Log.e(TAG, "${sound.name} 播放错误: ${error.message}")
+                Logger.e(TAG, "${sound.name} 播放错误: ${error.message}")
                 playingStates[sound] = false
                 // 停止无缝循环检查
                 stopLocalSeamlessLoopCheck(sound)
@@ -364,7 +401,7 @@ class AudioManager private constructor() {
 
             val player = players[sound]
             if (player == null) {
-                Log.e(TAG, "播放器 $soundName 未初始化，无法设置媒体源")
+                Logger.e(TAG, "播放器 $soundName 未初始化，无法设置媒体源")
                 return
             }
 
@@ -378,7 +415,7 @@ class AudioManager private constructor() {
                 }
                 player.playWhenReady = false
             } catch (e: Exception) {
-                Log.w(TAG, "重置播放器状态失败: ${e.message}")
+                Logger.w(TAG, "重置播放器状态失败: ${e.message}")
             }
             
             // 使用 ClippingMediaSource，设置具体的结束位置
@@ -401,7 +438,7 @@ class AudioManager private constructor() {
             // 不再需要循环检查，ExoPlayer 的 REPEAT_MODE_ONE 会自动处理
             localLoopInfo.remove(sound)
             
-            Log.d(TAG, "$soundName 音频媒体源已设置，循环范围: ${startPositionMs}ms - ${if (endPositionMs > 0) "${endPositionMs}ms" else "音源末尾"}，使用无缝循环: $useSeamlessLoop")
+            Logger.d(TAG, "$soundName 音频媒体源已设置，循环范围: ${startPositionMs}ms - ${if (endPositionMs > 0) "${endPositionMs}ms" else "音源末尾"}，使用无缝循环: $useSeamlessLoop")
         } catch (e: Exception) {
             Logger.e(TAG, "准备$soundName 音频失败", e)
         }
@@ -587,34 +624,44 @@ class AudioManager private constructor() {
     /**
      * 播放指定类型的声音
      */
+    // =========================================================================
+    // endregion
+    // =========================================================================
+
+    // =========================================================================
+    // region 公共播放控制 API
+    // =========================================================================
+
     fun playSound(context: Context, sound: Sound) {
-        Log.d(TAG, "playSound 被调用: ${sound.name}")
+        Logger.d(TAG, "playSound 被调用: ${sound.name}")
         try {
             if (applicationContext == null) {
                 applicationContext = context.applicationContext
                 // 初始化蓝牙耳机监听器
                 initializeBluetoothHeadsetListener(context)
+                // 注册电话状态监听
+                registerPhoneStateListener(context)
             }
             
             // 关键修复：确保该声音的音量已从 SharedPreferences 加载
             ensureVolumeLoaded(context, sound)
 
             if (sound == Sound.NONE) {
-                Log.w(TAG, "声音类型为 NONE，取消播放")
+                Logger.w(TAG, "声音类型为 NONE，取消播放")
                 return
             }
 
             if (!hasAudioFocus && !requestAudioFocus(context)) {
-                Log.w(TAG, "无法获取音频焦点，取消播放")
+                Logger.w(TAG, "无法获取音频焦点，取消播放")
                 return
             }
 
             if (isPlayingSound(sound)) {
-                Log.d(TAG, "${sound.name} 已经在播放中")
+                Logger.d(TAG, "${sound.name} 已经在播放中")
                 return
             }
             
-            Log.d(TAG, "开始播放流程: ${sound.name}")
+            Logger.d(TAG, "开始播放流程: ${sound.name}")
 
             // 检查是否已达到最大播放数量，如果是则停止最早播放的声音
             if (playingQueue.size >= MAX_CONCURRENT_SOUNDS) {
@@ -624,13 +671,13 @@ class AudioManager private constructor() {
                         // 直接暂停，不调用pauseSound避免递归
                         players[oldestItem.sound]?.pause()
                         playingStates[oldestItem.sound] = false
-                        Log.d(TAG, "已达到最大播放数量，停止最早播放的本地声音: ${oldestItem.sound.name}")
+                        Logger.d(TAG, "已达到最大播放数量，停止最早播放的本地声音: ${oldestItem.sound.name}")
                     }
                     is PlayingItem.RemoteSound -> {
                         // 直接暂停，不调用pauseRemoteSound避免递归
                         remotePlayers[oldestItem.soundId]?.pause()
                         remotePlayingStates[oldestItem.soundId] = false
-                        Log.d(TAG, "已达到最大播放数量，停止最早播放的远程声音: ${oldestItem.soundId}")
+                        Logger.d(TAG, "已达到最大播放数量，停止最早播放的远程声音: ${oldestItem.soundId}")
                     }
                 }
             }
@@ -646,19 +693,19 @@ class AudioManager private constructor() {
                     try {
                         existingPlayer.clearMediaItems()
                     } catch (e: NoSuchMethodError) {
-                        Log.d(TAG, "clearMediaItems 方法不可用，使用 stop() 重置播放器")
+                        Logger.d(TAG, "clearMediaItems 方法不可用，使用 stop() 重置播放器")
                     } catch (e: Exception) {
-                        Log.w(TAG, "清除媒体项失败: ${e.message}")
+                        Logger.w(TAG, "清除媒体项失败: ${e.message}")
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "重置播放器 ${sound.name} 状态时出错: ${e.message}")
+                    Logger.w(TAG, "重置播放器 ${sound.name} 状态时出错: ${e.message}")
                     // 如果重置失败，释放旧播放器并创建新的
                     try {
                         existingPlayer.release()
                         players.remove(sound)
                         playingStates[sound] = false
                     } catch (releaseException: Exception) {
-                        Log.e(TAG, "释放播放器 ${sound.name} 失败: ${releaseException.message}")
+                        Logger.e(TAG, "释放播放器 ${sound.name} 失败: ${releaseException.message}")
                         players.remove(sound)
                         playingStates[sound] = false
                     }
@@ -672,7 +719,7 @@ class AudioManager private constructor() {
             
             val player = players[sound]
             if (player == null) {
-                Log.e(TAG, "播放器 ${sound.name} 初始化失败，无法播放")
+                Logger.e(TAG, "播放器 ${sound.name} 初始化失败，无法播放")
                 return
             }
 
@@ -696,7 +743,7 @@ class AudioManager private constructor() {
                     Sound.MORNING_COFFEE -> prepareMorningCoffeeSound(context, sound)
                     Sound.WINDMILL -> prepareWindmillSound(context, sound)
                     else -> {
-                        Log.e(TAG, "未知的声音类型: ${sound.name}")
+                        Logger.e(TAG, "未知的声音类型: ${sound.name}")
                         return
                     }
                 }
@@ -707,7 +754,7 @@ class AudioManager private constructor() {
 
             // 检查媒体源是否设置成功
             if (player.mediaItemCount == 0) {
-                Log.e(TAG, "播放器 ${sound.name} 媒体源设置失败，mediaItemCount = 0")
+                Logger.e(TAG, "播放器 ${sound.name} 媒体源设置失败，mediaItemCount = 0")
                 return
             }
 
@@ -718,12 +765,12 @@ class AudioManager private constructor() {
                 
                 // 确保播放器处于 IDLE 状态（setMediaSource 后应该是 IDLE）
                 if (player.playbackState != Player.STATE_IDLE) {
-                    Log.w(TAG, "播放器 ${sound.name} 状态不是 IDLE: ${player.playbackState}，尝试重置")
+                    Logger.w(TAG, "播放器 ${sound.name} 状态不是 IDLE: ${player.playbackState}，尝试重置")
                     try {
                         player.stop()
                         player.playWhenReady = false
                     } catch (e: Exception) {
-                        Log.w(TAG, "重置播放器状态失败: ${e.message}")
+                        Logger.w(TAG, "重置播放器状态失败: ${e.message}")
                     }
                 }
                 
@@ -746,7 +793,7 @@ class AudioManager private constructor() {
                 // 通知服务播放状态已改变
                 notifyServicePlayingStateChanged()
                 
-                Log.d(TAG, "${sound.name} 开始播放，媒体源数量: ${player.mediaItemCount}，播放器状态: ${player.playbackState}，playWhenReady: ${player.playWhenReady}")
+                Logger.d(TAG, "${sound.name} 开始播放，媒体源数量: ${player.mediaItemCount}，播放器状态: ${player.playbackState}，playWhenReady: ${player.playWhenReady}")
             } catch (e: Exception) {
                 Logger.e(TAG, "播放 ${sound.name} 时出错", e)
                 playingStates[sound] = false
@@ -767,7 +814,7 @@ class AudioManager private constructor() {
                 return
             }
 
-            Log.d(TAG, "准备暂停声音: ${sound.name}")
+            Logger.d(TAG, "准备暂停声音: ${sound.name}")
             
             // 停止无缝循环检查
             stopLocalSeamlessLoopCheck(sound)
@@ -777,19 +824,19 @@ class AudioManager private constructor() {
             // 从播放队列中移除
             playingQueue.remove(PlayingItem.LocalSound(sound))
             
-            Log.d(TAG, "${sound.name} 已暂停，当前播放状态已更新为 false")
+            Logger.d(TAG, "${sound.name} 已暂停，当前播放状态已更新为 false")
             
             // 通知服务播放状态已改变
             notifyServicePlayingStateChanged()
             
             // 关键修复：单个音频暂停后，保存当前正在播放的音频列表
             // 这样可以确保最近播放只包含当前正在播放的音频
-            Log.d(TAG, "暂停 ${sound.name} 后，开始保存最近播放记录")
+            Logger.d(TAG, "暂停 ${sound.name} 后，开始保存最近播放记录")
             saveRecentPlayingSounds()
             
-            Log.d(TAG, "${sound.name} 暂停流程完成")
+            Logger.d(TAG, "${sound.name} 暂停流程完成")
         } catch (e: Exception) {
-            Log.e(TAG, "暂停 ${sound.name} 失败: ${e.message}")
+            Logger.e(TAG, "暂停 ${sound.name} 失败: ${e.message}")
         }
     }
 
@@ -816,7 +863,7 @@ class AudioManager private constructor() {
                     }
                     playingStates[sound] = false
                 } catch (e: Exception) {
-                    Log.e(TAG, "暂停 ${sound.name} 失败: ${e.message}")
+                    Logger.e(TAG, "暂停 ${sound.name} 失败: ${e.message}")
                     playingStates[sound] = false
                 }
             }
@@ -834,7 +881,7 @@ class AudioManager private constructor() {
                             stop()
                             release()
                         } catch (e: Exception) {
-                            Log.w(TAG, "释放远程播放器 $soundId 时出错: ${e.message}")
+                            Logger.w(TAG, "释放远程播放器 $soundId 时出错: ${e.message}")
                         }
                     }
                     remotePlayers.remove(soundId)
@@ -843,7 +890,7 @@ class AudioManager private constructor() {
                     // 保留元数据和音量，用于恢复播放
                     remoteLoopInfo.remove(soundId)
                 } catch (e: Exception) {
-                    Log.e(TAG, "暂停远程声音 $soundId 失败: ${e.message}")
+                    Logger.e(TAG, "暂停远程声音 $soundId 失败: ${e.message}")
                     remotePlayers.remove(soundId)
                     remotePlayingStates[soundId] = false
                     remoteLoopInfo.remove(soundId)
@@ -856,9 +903,9 @@ class AudioManager private constructor() {
             // 通知服务播放状态已改变
             notifyServicePlayingStateChanged()
             
-            Log.d(TAG, "所有声音已暂停")
+            Logger.d(TAG, "所有声音已暂停")
         } catch (e: Exception) {
-            Log.e(TAG, "暂停所有声音时发生错误: ${e.message}")
+            Logger.e(TAG, "暂停所有声音时发生错误: ${e.message}")
         }
     }
     
@@ -867,7 +914,7 @@ class AudioManager private constructor() {
      */
     fun stopAllSounds() {
         try {
-            Log.d(TAG, "开始停止所有声音...")
+            Logger.d(TAG, "开始停止所有声音...")
             
             // 关键修复：用户主动停止所有音频时，不保存最近播放记录
             // 因为用户的意图是停止播放，而不是暂停
@@ -876,9 +923,9 @@ class AudioManager private constructor() {
             // 停止本地音频文件
             try {
                 LocalAudioPlayer.getInstance().stopAllAudios()
-                Log.d(TAG, "本地音频文件已停止")
+                Logger.d(TAG, "本地音频文件已停止")
             } catch (e: Exception) {
-                Log.e(TAG, "停止本地音频文件失败: ${e.message}")
+                Logger.e(TAG, "停止本地音频文件失败: ${e.message}")
             }
             
             // 停止所有本地声音
@@ -894,16 +941,16 @@ class AudioManager private constructor() {
                         it.stop()
                         // 验证是否真的停止了
                         if (it.isPlaying) {
-                            Log.w(TAG, "${sound.name} 停止后仍在播放，强制暂停")
+                            Logger.w(TAG, "${sound.name} 停止后仍在播放，强制暂停")
                             it.pause()
                             it.playWhenReady = false
                         }
                     }
                     // 强制更新状态，不管播放器实际状态如何
                     playingStates[sound] = false
-                    Log.d(TAG, "${sound.name} 已停止")
+                    Logger.d(TAG, "${sound.name} 已停止")
                 } catch (e: Exception) {
-                    Log.e(TAG, "停止 ${sound.name} 失败: ${e.message}")
+                    Logger.e(TAG, "停止 ${sound.name} 失败: ${e.message}")
                     // 即使出错也要更新状态
                     playingStates[sound] = false
                 }
@@ -925,7 +972,7 @@ class AudioManager private constructor() {
                             it.stop()
                             it.release()
                         } catch (e: Exception) {
-                            Log.w(TAG, "释放远程播放器 $soundId 时出错: ${e.message}")
+                            Logger.w(TAG, "释放远程播放器 $soundId 时出错: ${e.message}")
                         }
                     }
                     // 清理所有相关状态
@@ -935,9 +982,9 @@ class AudioManager private constructor() {
                     // remoteVolumeSettings[soundId] 不删除
                     remoteLoopInfo.remove(soundId)
                     playingQueue.remove(PlayingItem.RemoteSound(soundId))
-                    Log.d(TAG, "远程声音 $soundId 已停止并释放资源")
+                    Logger.d(TAG, "远程声音 $soundId 已停止并释放资源")
                 } catch (e: Exception) {
-                    Log.e(TAG, "停止远程声音 $soundId 失败: ${e.message}")
+                    Logger.e(TAG, "停止远程声音 $soundId 失败: ${e.message}")
                     // 即使出错也要更新状态
                     remotePlayers.remove(soundId)
                     remotePlayingStates.remove(soundId)
@@ -952,7 +999,7 @@ class AudioManager private constructor() {
             // 验证是否还有声音在播放
             val stillPlaying = hasAnyPlayingSounds()
             if (stillPlaying) {
-                Log.w(TAG, "停止所有声音后，仍有声音在播放，进行二次停止")
+                Logger.w(TAG, "停止所有声音后，仍有声音在播放，进行二次停止")
                 // 二次停止，确保所有声音都停止
                 players.forEach { (sound, player) ->
                     player?.let {
@@ -964,12 +1011,12 @@ class AudioManager private constructor() {
                 // 远程声音已经释放，不需要二次停止
             }
             
-            Log.d(TAG, "停止所有声音完成，远程播放器数量: ${remotePlayers.size}")
+            Logger.d(TAG, "停止所有声音完成，远程播放器数量: ${remotePlayers.size}")
             
             // 通知服务播放状态已改变
             notifyServicePlayingStateChanged()
         } catch (e: Exception) {
-            Log.e(TAG, "停止所有声音时发生错误: ${e.message}", e)
+            Logger.e(TAG, "停止所有声音时发生错误: ${e.message}", e)
         }
     }
 
@@ -1023,7 +1070,7 @@ class AudioManager private constructor() {
             )
             volumeSettings[sound] = savedVolume
             volumeLoaded.add(sound)
-            Log.d(TAG, "加载 ${sound.name} 的保存音量: $savedVolume")
+            Logger.d(TAG, "加载 ${sound.name} 的保存音量: $savedVolume")
         }
     }
     
@@ -1036,7 +1083,7 @@ class AudioManager private constructor() {
                 ensureVolumeLoaded(context, sound)
             }
         }
-        Log.d(TAG, "已加载所有本地声音音量设置")
+        Logger.d(TAG, "已加载所有本地声音音量设置")
     }
 
     /**
@@ -1054,9 +1101,9 @@ class AudioManager private constructor() {
             players.remove(sound)
             playingStates[sound] = false
             localLoopInfo.remove(sound)
-            Log.d(TAG, "成功释放 ${sound.name} 播放器资源")
+            Logger.d(TAG, "成功释放 ${sound.name} 播放器资源")
         } catch (e: Exception) {
-            Log.e(TAG, "释放 ${sound.name} 播放器资源失败: ${e.message}")
+            Logger.e(TAG, "释放 ${sound.name} 播放器资源失败: ${e.message}")
             players.remove(sound)
             localLoopInfo.remove(sound)
         }
@@ -1078,33 +1125,93 @@ class AudioManager private constructor() {
             // 释放蓝牙耳机监听器
             bluetoothHeadsetManager.release()
             
+            // 注销电话状态监听
+            unregisterPhoneStateListener()
+            
             applicationContext = null
-            Log.d(TAG, "已释放所有播放器资源")
+            Logger.d(TAG, "已释放所有播放器资源")
         } catch (e: Exception) {
-            Log.e(TAG, "释放所有播放器资源失败: ${e.message}")
+            Logger.e(TAG, "释放所有播放器资源失败: ${e.message}")
         }
     }
     
     /**
      * 初始化蓝牙耳机监听器
      */
+    // =========================================================================
+    // endregion
+    // =========================================================================
+
+    // =========================================================================
+    // region 蓝牙耳机 & MusicService & 最近播放
+    // =========================================================================
+
     private fun initializeBluetoothHeadsetListener(context: Context) {
         try {
             bluetoothHeadsetManager.initialize(context) {
                 // 蓝牙耳机断开时的回调
-                Log.d(TAG, "检测到蓝牙耳机断开，暂停所有音频")
+                Logger.d(TAG, "检测到蓝牙耳机断开，暂停所有音频")
                 pauseAllSounds()
                 // 同时暂停本地音频文件
                 try {
                     LocalAudioPlayer.getInstance().stopAllAudios()
-                    Log.d(TAG, "本地音频文件已暂停")
+                    Logger.d(TAG, "本地音频文件已暂停")
                 } catch (e: Exception) {
-                    Log.e(TAG, "暂停本地音频文件失败: ${e.message}")
+                    Logger.e(TAG, "暂停本地音频文件失败: ${e.message}")
                 }
             }
-            Log.d(TAG, "蓝牙耳机监听器初始化成功")
+            Logger.d(TAG, "蓝牙耳机监听器初始化成功")
         } catch (e: Exception) {
-            Log.e(TAG, "初始化蓝牙耳机监听器失败: ${e.message}")
+            Logger.e(TAG, "初始化蓝牙耳机监听器失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 注册电话状态监听
+     * 用于来电时暂停播放，挂断后自动恢复
+     */
+    private fun registerPhoneStateListener(context: Context) {
+        try {
+            telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            phoneStateListener = object : PhoneStateListener() {
+                @Deprecated("Deprecated in Java")
+                override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+                    when (state) {
+                        TelephonyManager.CALL_STATE_RINGING,
+                        TelephonyManager.CALL_STATE_OFFHOOK -> {
+                            // 来电或通话中，标记为因来电暂停
+                            if (hasAnyPlayingSounds()) {
+                                wasPausedByPhoneCall = true
+                                Logger.d(TAG, "检测到来电/通话，标记为因来电暂停")
+                            }
+                        }
+                        TelephonyManager.CALL_STATE_IDLE -> {
+                            // 通话结束，标记会在 AUDIOFOCUS_GAIN 中处理
+                            Logger.d(TAG, "通话结束，等待音频焦点恢复")
+                        }
+                    }
+                }
+            }
+            telephonyManager?.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
+            Logger.d(TAG, "电话状态监听器注册成功")
+        } catch (e: Exception) {
+            Logger.e(TAG, "注册电话状态监听器失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 注销电话状态监听
+     */
+    private fun unregisterPhoneStateListener() {
+        try {
+            phoneStateListener?.let { listener ->
+                telephonyManager?.listen(listener, PhoneStateListener.LISTEN_NONE)
+                phoneStateListener = null
+                telephonyManager = null
+                Logger.d(TAG, "电话状态监听器已注销")
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "注销电话状态监听器失败: ${e.message}")
         }
     }
     
@@ -1118,23 +1225,23 @@ class AudioManager private constructor() {
         try {
             val context = applicationContext ?: return
             
-            Log.d(TAG, "========== 开始保存最近播放记录 ==========")
+            Logger.d(TAG, "========== 开始保存最近播放记录 ==========")
             
             // 获取正在播放的本地声音
             val playingLocalSounds = getPlayingSounds().map { it.name }
-            Log.d(TAG, "当前正在播放的本地声音数量: ${playingLocalSounds.size}")
-            Log.d(TAG, "当前正在播放的本地声音列表: ${playingLocalSounds.joinToString()}")
+            Logger.d(TAG, "当前正在播放的本地声音数量: ${playingLocalSounds.size}")
+            Logger.d(TAG, "当前正在播放的本地声音列表: ${playingLocalSounds.joinToString()}")
             
             // 获取正在播放的远程声音
             val playingRemoteSounds = getPlayingRemoteSoundIds()
-            Log.d(TAG, "当前正在播放的远程声音数量: ${playingRemoteSounds.size}")
-            Log.d(TAG, "当前正在播放的远程声音列表: ${playingRemoteSounds.joinToString()}")
+            Logger.d(TAG, "当前正在播放的远程声音数量: ${playingRemoteSounds.size}")
+            Logger.d(TAG, "当前正在播放的远程声音列表: ${playingRemoteSounds.joinToString()}")
             
             // 获取正在播放的本地音频文件（包含 URI 映射）
             val localAudioPlayer = LocalAudioPlayer.getInstance()
             val playingAudioUris = localAudioPlayer.getPlayingAudioUris()
-            Log.d(TAG, "当前正在播放的本地音频文件数量: ${playingAudioUris.size}")
-            Log.d(TAG, "当前正在播放的本地音频文件ID列表: ${playingAudioUris.keys.joinToString()}")
+            Logger.d(TAG, "当前正在播放的本地音频文件数量: ${playingAudioUris.size}")
+            Logger.d(TAG, "当前正在播放的本地音频文件ID列表: ${playingAudioUris.keys.joinToString()}")
             
             // 关键修复：只有当有任何音频正在播放时才保存
             // 如果所有音频都停止了，保留之前的记录，不覆盖为空
@@ -1148,16 +1255,16 @@ class AudioManager private constructor() {
                 org.xmsleep.app.preferences.PreferencesManager.saveRecentRemoteSounds(context, playingRemoteSounds)
                 org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioUris)
                 
-                Log.d(TAG, "✓ 已保存最近播放记录:")
-                Log.d(TAG, "  - 本地声音: ${playingLocalSounds.joinToString().ifEmpty { "无" }}")
-                Log.d(TAG, "  - 远程声音: ${playingRemoteSounds.joinToString().ifEmpty { "无" }}")
-                Log.d(TAG, "  - 本地音频文件: ${playingAudioUris.keys.joinToString().ifEmpty { "无" }}")
+                Logger.d(TAG, "✓ 已保存最近播放记录:")
+                Logger.d(TAG, "  - 本地声音: ${playingLocalSounds.joinToString().ifEmpty { "无" }}")
+                Logger.d(TAG, "  - 远程声音: ${playingRemoteSounds.joinToString().ifEmpty { "无" }}")
+                Logger.d(TAG, "  - 本地音频文件: ${playingAudioUris.keys.joinToString().ifEmpty { "无" }}")
             } else {
                 // 没有音频正在播放，保留之前的记录
-                Log.d(TAG, "✓ 当前没有正在播放的音频，保留之前的最近播放记录")
+                Logger.d(TAG, "✓ 当前没有正在播放的音频，保留之前的最近播放记录")
             }
             
-            Log.d(TAG, "========== 保存最近播放记录完成 ==========")
+            Logger.d(TAG, "========== 保存最近播放记录完成 ==========")
         } catch (e: Exception) {
             Logger.e(TAG, "保存最近播放声音失败", e)
         }
@@ -1168,24 +1275,24 @@ class AudioManager private constructor() {
      */
     fun playRecentSounds(context: Context) {
         try {
-            Log.d(TAG, "开始播放最近的声音...")
+            Logger.d(TAG, "开始播放最近的声音...")
             
             // 获取最近播放的本地声音
             val recentLocalSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalSounds(context)
-            Log.d(TAG, "最近播放的本地声音数量: ${recentLocalSounds.size}")
+            Logger.d(TAG, "最近播放的本地声音数量: ${recentLocalSounds.size}")
             recentLocalSounds.forEach { soundName ->
                 try {
                     val sound = Sound.valueOf(soundName)
                     playSound(context, sound)
-                    Log.d(TAG, "成功播放最近的本地声音: $soundName")
+                    Logger.d(TAG, "成功播放最近的本地声音: $soundName")
                 } catch (e: Exception) {
-                    Log.e(TAG, "播放最近的本地声音 $soundName 失败: ${e.message}")
+                    Logger.e(TAG, "播放最近的本地声音 $soundName 失败: ${e.message}")
                 }
             }
             
             // 获取最近播放的远程声音
             val recentRemoteSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentRemoteSounds(context)
-            Log.d(TAG, "最近播放的远程声音数量: ${recentRemoteSounds.size}")
+            Logger.d(TAG, "最近播放的远程声音数量: ${recentRemoteSounds.size}")
             
             // 使用协程异步加载远程声音
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
@@ -1205,22 +1312,22 @@ class AudioManager private constructor() {
                             
                             if (uri != null) {
                                 playRemoteSound(context, metadata, uri)
-                                Log.d(TAG, "成功播放最近的远程声音: $soundId")
+                                Logger.d(TAG, "成功播放最近的远程声音: $soundId")
                             } else {
-                                Log.w(TAG, "无法播放最近的远程声音 $soundId：URI 为空")
+                                Logger.w(TAG, "无法播放最近的远程声音 $soundId：URI 为空")
                             }
                         } else {
-                            Log.w(TAG, "无法播放最近的远程声音 $soundId：元数据不存在")
+                            Logger.w(TAG, "无法播放最近的远程声音 $soundId：元数据不存在")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "播放最近的远程声音 $soundId 失败: ${e.message}")
+                        Logger.e(TAG, "播放最近的远程声音 $soundId 失败: ${e.message}")
                     }
                 }
             }
             
             // 获取最近播放的本地音频文件（包含 URI 映射）
             val recentLocalAudioFiles = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalAudioFiles(context)
-            Log.d(TAG, "最近播放的本地音频文件数量: ${recentLocalAudioFiles.size}")
+            Logger.d(TAG, "最近播放的本地音频文件数量: ${recentLocalAudioFiles.size}")
             
             if (recentLocalAudioFiles.isNotEmpty()) {
                 val localAudioPlayer = LocalAudioPlayer.getInstance()
@@ -1228,18 +1335,18 @@ class AudioManager private constructor() {
                     try {
                         val uri = android.net.Uri.parse(uriString)
                         localAudioPlayer.playAudio(context, audioId, uri) { error ->
-                            Log.e(TAG, "播放最近的本地音频文件 $audioId 失败: $error")
+                            Logger.e(TAG, "播放最近的本地音频文件 $audioId 失败: $error")
                         }
-                        Log.d(TAG, "成功播放最近的本地音频文件: $audioId")
+                        Logger.d(TAG, "成功播放最近的本地音频文件: $audioId")
                     } catch (e: Exception) {
-                        Log.e(TAG, "播放最近的本地音频文件 $audioId 失败: ${e.message}")
+                        Logger.e(TAG, "播放最近的本地音频文件 $audioId 失败: ${e.message}")
                     }
                 }
             }
             
-            Log.d(TAG, "播放最近声音完成")
+            Logger.d(TAG, "播放最近声音完成")
         } catch (e: Exception) {
-            Log.e(TAG, "播放最近声音失败: ${e.message}")
+            Logger.e(TAG, "播放最近声音失败: ${e.message}")
         }
     }
     
@@ -1275,7 +1382,7 @@ class AudioManager private constructor() {
         val result = hasLocalPlaying || hasRemotePlaying || hasLocalAudioActive
         
         // 始终打印日志，方便调试
-        Log.d(TAG, "hasAnyPlayingSounds 调用: 本地声音=$hasLocalPlaying, 远程声音=$hasRemotePlaying, 本地音频活跃=$hasLocalAudioActive, 最终结果=$result")
+        Logger.d(TAG, "hasAnyPlayingSounds 调用: 本地声音=$hasLocalPlaying, 远程声音=$hasRemotePlaying, 本地音频活跃=$hasLocalAudioActive, 最终结果=$result")
         
         return result
     }
@@ -1303,9 +1410,9 @@ class AudioManager private constructor() {
                 Context.BIND_AUTO_CREATE
             )
             
-            Log.d(TAG, "MusicService 启动请求已发送")
+            Logger.d(TAG, "MusicService 启动请求已发送")
         } catch (e: Exception) {
-            Log.e(TAG, "启动 MusicService 失败: ${e.message}", e)
+            Logger.e(TAG, "启动 MusicService 失败: ${e.message}", e)
         }
     }
     
@@ -1323,9 +1430,9 @@ class AudioManager private constructor() {
             context.stopService(serviceIntent)
             
             musicService = null
-            Log.d(TAG, "MusicService 已停止")
+            Logger.d(TAG, "MusicService 已停止")
         } catch (e: Exception) {
-            Log.e(TAG, "停止 MusicService 失败: ${e.message}", e)
+            Logger.e(TAG, "停止 MusicService 失败: ${e.message}", e)
         }
     }
     
@@ -1340,33 +1447,33 @@ class AudioManager private constructor() {
             val totalCount = localCount + remoteCount
             
             musicService?.updatePlayingState(isPlaying, totalCount)
-            Log.d(TAG, "通知服务状态: isPlaying=$isPlaying, count=$totalCount")
+            Logger.d(TAG, "通知服务状态: isPlaying=$isPlaying, count=$totalCount")
         } catch (e: Exception) {
-            Log.e(TAG, "通知服务播放状态失败: ${e.message}")
+            Logger.e(TAG, "通知服务播放状态失败: ${e.message}")
         }
     }
     
     /**
      * 获取正在播放的远程声音ID列表
-     * 检查所有有播放器的远程音频，确保能获取到所有正在播放的音频
+     * 优先从 remotePlayingStates 获取，因为 pauseAllSounds 会释放播放器
      */
     fun getPlayingRemoteSoundIds(): List<String> {
-        // 直接检查所有播放器，看哪些真的在播放
+        // 优先检查 remotePlayingStates，因为 pauseAllSounds 会释放播放器
+        // 但保留 remotePlayingStates 为 false 而不是删除，用于记录哪些音频之前正在播放
+        val stateBasedIds = remotePlayingStates.filter { it.value }.keys.toList()
+        if (stateBasedIds.isNotEmpty()) {
+            Logger.d(TAG, "获取正在播放的远程音频（从状态）: ${stateBasedIds.joinToString()}")
+            return stateBasedIds
+        }
+        // 回退到播放器检查（用于正常播放状态）
         val playingIds = mutableListOf<String>()
         remotePlayers.forEach { (soundId, player) ->
             if (player != null && player.playWhenReady && player.isPlaying) {
                 playingIds.add(soundId)
             }
         }
-        // 如果通过播放器检查找到了，返回结果
-        if (playingIds.isNotEmpty()) {
-            Log.d(TAG, "获取正在播放的远程音频（从播放器）: ${playingIds.joinToString()}")
-            return playingIds
-        }
-        // 否则回退到状态检查（与本地音频逻辑一致）
-        val stateBasedIds = remotePlayingStates.filter { it.value }.keys.toList()
-        Log.d(TAG, "获取正在播放的远程音频（从状态）: ${stateBasedIds.joinToString()}")
-        return stateBasedIds
+        Logger.d(TAG, "获取正在播放的远程音频（从播放器）: ${playingIds.joinToString()}")
+        return playingIds
     }
     
     /**
@@ -1380,6 +1487,14 @@ class AudioManager private constructor() {
      * 播放网络音频（使用元数据）
      */
     @UnstableApi
+    // =========================================================================
+    // endregion
+    // =========================================================================
+
+    // =========================================================================
+    // region 远程在线声音播放
+    // =========================================================================
+
     fun playRemoteSound(
         context: Context,
         metadata: org.xmsleep.app.audio.model.SoundMetadata,
@@ -1390,6 +1505,8 @@ class AudioManager private constructor() {
                 applicationContext = context.applicationContext
                 // 初始化蓝牙耳机监听器
                 initializeBluetoothHeadsetListener(context)
+                // 注册电话状态监听
+                registerPhoneStateListener(context)
                 // 加载保存的音量设置
                 loadLocalSoundVolumes(context)
             }
@@ -1405,12 +1522,12 @@ class AudioManager private constructor() {
             }
             
             if (!hasAudioFocus && !requestAudioFocus(context)) {
-                Log.w(TAG, "无法获取音频焦点，取消播放")
+                Logger.w(TAG, "无法获取音频焦点，取消播放")
                 return
             }
             
             if (isPlayingRemoteSound(soundId)) {
-                Log.d(TAG, "$soundId 已经在播放中")
+                Logger.d(TAG, "$soundId 已经在播放中")
                 return
             }
             
@@ -1425,7 +1542,7 @@ class AudioManager private constructor() {
                             pause()
                         }
                         playingStates[oldestItem.sound] = false
-                        Log.d(TAG, "已达到最大播放数量，暂停最早播放的本地声音: ${oldestItem.sound.name}")
+                        Logger.d(TAG, "已达到最大播放数量，暂停最早播放的本地声音: ${oldestItem.sound.name}")
                     }
                     is PlayingItem.RemoteSound -> {
                         // 远程声音：暂停并释放播放器（避免资源累积）
@@ -1441,9 +1558,9 @@ class AudioManager private constructor() {
                             // 保留音量和元数据，用于恢复播放
                             remoteLoopInfo.remove(oldestItem.soundId)
                             stopSeamlessLoopCheck(oldestItem.soundId)
-                            Log.d(TAG, "已达到最大播放数量，释放最早播放的远程声音: ${oldestItem.soundId}")
+                            Logger.d(TAG, "已达到最大播放数量，释放最早播放的远程声音: ${oldestItem.soundId}")
                         } catch (e: Exception) {
-                            Log.e(TAG, "释放旧远程播放器失败: ${e.message}")
+                            Logger.e(TAG, "释放旧远程播放器失败: ${e.message}")
                             remotePlayers.remove(oldestItem.soundId)
                             remotePlayingStates[oldestItem.soundId] = false
                             remoteLoopInfo.remove(oldestItem.soundId)
@@ -1457,12 +1574,12 @@ class AudioManager private constructor() {
             val existingPlayer = remotePlayers[soundId]
             if (existingPlayer != null) {
                 try {
-                    Log.d(TAG, "播放器 $soundId 已存在，释放后重新创建")
+                    Logger.d(TAG, "播放器 $soundId 已存在，释放后重新创建")
                     existingPlayer.playWhenReady = false
                     existingPlayer.stop()
                     existingPlayer.release()
                 } catch (e: Exception) {
-                    Log.w(TAG, "释放旧播放器 $soundId 失败: ${e.message}")
+                    Logger.w(TAG, "释放旧播放器 $soundId 失败: ${e.message}")
                 }
                 remotePlayers.remove(soundId)
                 // 关键：不删除播放状态，后面会重新设置
@@ -1478,7 +1595,7 @@ class AudioManager private constructor() {
                     }
                     remotePlayers[soundId] = player
                     remotePlayingStates[soundId] = false
-                    Log.d(TAG, "$soundId 播放器初始化成功")
+                    Logger.d(TAG, "$soundId 播放器初始化成功")
                 } catch (e: Exception) {
                     Logger.e(TAG, "初始化 $soundId 播放器失败", e)
                     return
@@ -1487,7 +1604,7 @@ class AudioManager private constructor() {
             
             val player = remotePlayers[soundId]
             if (player == null) {
-                Log.e(TAG, "播放器 $soundId 初始化失败，无法播放")
+                Logger.e(TAG, "播放器 $soundId 初始化失败，无法播放")
                 return
             }
             
@@ -1514,7 +1631,7 @@ class AudioManager private constructor() {
                 // 如果 loopStart 和 loopEnd 都为 0，说明是完整播放整个音频，不需要 ClippingMediaSource
                 val finalMediaSource = if (loopStartMs == 0L && loopEndMs == 0L) {
                     // 完整播放，直接使用原始 MediaSource，避免 ClippingMediaSource 导致的循环问题
-                    Log.d(TAG, "$soundId 使用完整音频循环")
+                    Logger.d(TAG, "$soundId 使用完整音频循环")
                     mediaSource
                 } else {
                     // 计算优化的循环起始点：提前1秒，但不小于0
@@ -1542,7 +1659,7 @@ class AudioManager private constructor() {
                             .build()
                     }
                     
-                    Log.d(TAG, "$soundId 循环优化: 原始起始 ${loopStartMs}ms -> 优化起始 ${optimizedLoopStartMs}ms，结束 ${loopEndMs}ms")
+                    Logger.d(TAG, "$soundId 循环优化: 原始起始 ${loopStartMs}ms -> 优化起始 ${optimizedLoopStartMs}ms，结束 ${loopEndMs}ms")
                     clippingMediaSource
                 }
                 
@@ -1558,7 +1675,7 @@ class AudioManager private constructor() {
                         // 可以在这里添加其他优化参数
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "设置播放参数失败: ${e.message}")
+                    Logger.w(TAG, "设置播放参数失败: ${e.message}")
                 }
                 
                 // 不再需要循环检查，ExoPlayer 的 REPEAT_MODE_ONE 会自动处理
@@ -1575,7 +1692,7 @@ class AudioManager private constructor() {
                 // 通知服务播放状态已改变
                 notifyServicePlayingStateChanged()
                 
-                Log.d(TAG, "$soundId 开始播放，循环范围: ${metadata.loopStart}ms - ${metadata.loopEnd}ms")
+                Logger.d(TAG, "$soundId 开始播放，循环范围: ${metadata.loopStart}ms - ${metadata.loopEnd}ms")
             } catch (e: Exception) {
                 Logger.e(TAG, "播放 $soundId 声音失败", e)
                 remotePlayingStates[soundId] = false
@@ -1661,7 +1778,7 @@ class AudioManager private constructor() {
             }
             
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                Log.e(TAG, "$soundId 播放错误: ${error.message}")
+                Logger.e(TAG, "$soundId 播放错误: ${error.message}")
                 remotePlayingStates[soundId] = false
                 // 从播放队列中移除
                 playingQueue.remove(PlayingItem.RemoteSound(soundId))
@@ -1704,7 +1821,7 @@ class AudioManager private constructor() {
                         remotePositionCheckRunnables.remove(soundId)
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "$soundId 无缝循环检查失败: ${e.message}")
+                    Logger.e(TAG, "$soundId 无缝循环检查失败: ${e.message}")
                     remotePositionCheckRunnables.remove(soundId)
                 }
             }
@@ -1759,7 +1876,7 @@ class AudioManager private constructor() {
                         // 如果接近总时长结束，跳转到开始（虽然 REPEAT_MODE_ALL 应该会自动处理，但作为备用）
                         if (currentPositionMs >= totalDuration - thresholdMs) {
                             currentPlayer.seekTo(0)
-                            Log.d(TAG, "${sound.name} 无缝循环（备用）：从 ${currentPositionMs}ms 跳转到 0ms")
+                            Logger.d(TAG, "${sound.name} 无缝循环（备用）：从 ${currentPositionMs}ms 跳转到 0ms")
                         }
                     } else if (loopEnd > 0) {
                         // 如果有指定的循环结束位置，使用它
@@ -1767,7 +1884,7 @@ class AudioManager private constructor() {
                         val actualLoopEnd = loopEnd * 2 // 因为双份拼接，总长度是单个片段的两倍
                         if (currentPositionMs >= actualLoopEnd - thresholdMs) {
                             currentPlayer.seekTo(0)
-                            Log.d(TAG, "${sound.name} 无缝循环（备用）：从 ${currentPositionMs}ms 跳转到 0ms")
+                            Logger.d(TAG, "${sound.name} 无缝循环（备用）：从 ${currentPositionMs}ms 跳转到 0ms")
                         }
                     }
                     
@@ -1778,7 +1895,7 @@ class AudioManager private constructor() {
                         localPositionCheckRunnables.remove(sound)
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "${sound.name} 无缝循环检查失败: ${e.message}")
+                    Logger.e(TAG, "${sound.name} 无缝循环检查失败: ${e.message}")
                     localPositionCheckRunnables.remove(sound)
                 }
             }
@@ -1816,7 +1933,7 @@ class AudioManager private constructor() {
                     stop()
                     release()
                 } catch (e: Exception) {
-                    Log.w(TAG, "释放播放器 $soundId 时出错: ${e.message}")
+                    Logger.w(TAG, "释放播放器 $soundId 时出错: ${e.message}")
                 }
             }
             remotePlayers.remove(soundId)
@@ -1837,9 +1954,9 @@ class AudioManager private constructor() {
             // 这样可以确保最近播放只包含当前正在播放的音频
             saveRecentPlayingSounds()
             
-            Log.d(TAG, "$soundId 已暂停并释放播放器，保留元数据和音量")
+            Logger.d(TAG, "$soundId 已暂停并释放播放器，保留元数据和音量")
         } catch (e: Exception) {
-            Log.e(TAG, "暂停 $soundId 失败: ${e.message}")
+            Logger.e(TAG, "暂停 $soundId 失败: ${e.message}")
             remotePlayers.remove(soundId)
             remotePlayingStates[soundId] = false
             remoteLoopInfo.remove(soundId)
@@ -1897,7 +2014,7 @@ class AudioManager private constructor() {
             )
             remoteVolumeSettings[soundId] = savedVolume
             remoteVolumeLoaded.add(soundId)
-            Log.d(TAG, "加载远程音频 $soundId 的保存音量: $savedVolume")
+            Logger.d(TAG, "加载远程音频 $soundId 的保存音量: $savedVolume")
         }
     }
     
@@ -1923,9 +2040,9 @@ class AudioManager private constructor() {
             remotePlayingStates.remove(soundId)
             remoteVolumeSettings.remove(soundId)
             remoteLoopInfo.remove(soundId)
-            Log.d(TAG, "成功释放 $soundId 播放器资源")
+            Logger.d(TAG, "成功释放 $soundId 播放器资源")
         } catch (e: Exception) {
-            Log.e(TAG, "释放 $soundId 播放器资源失败: ${e.message}")
+            Logger.e(TAG, "释放 $soundId 播放器资源失败: ${e.message}")
             remotePlayers.remove(soundId)
             remotePlayingStates.remove(soundId)
             remoteVolumeSettings.remove(soundId)
@@ -1937,14 +2054,18 @@ class AudioManager private constructor() {
     /**
      * 释放所有网络音频播放器
      */
+    // =========================================================================
+    // endregion 远程在线声音播放
+    // =========================================================================
+
     fun releaseAllRemotePlayers() {
         try {
             remotePlayers.keys.forEach { soundId ->
                 releaseRemotePlayer(soundId)
             }
-            Log.d(TAG, "已释放所有网络音频播放器资源")
+            Logger.d(TAG, "已释放所有网络音频播放器资源")
         } catch (e: Exception) {
-            Log.e(TAG, "释放所有网络音频播放器资源失败: ${e.message}")
+            Logger.e(TAG, "释放所有网络音频播放器资源失败: ${e.message}")
         }
     }
 }

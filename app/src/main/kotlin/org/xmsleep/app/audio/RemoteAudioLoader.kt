@@ -1,7 +1,7 @@
 package org.xmsleep.app.audio
 
 import android.content.Context
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.xmsleep.app.audio.model.AudioSource
 import org.xmsleep.app.audio.model.SoundsManifest
+import org.xmsleep.app.utils.NetworkClient
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -39,11 +40,7 @@ class RemoteAudioLoader(private val context: Context) {
     }
     
     private val gson = Gson()
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)  // 增加连接超时时间
-        .readTimeout(60, TimeUnit.SECONDS)     // 增加读取超时时间
-        .retryOnConnectionFailure(true)        // 启用连接失败重试
-        .build()
+    private val okHttpClient = NetworkClient.default
     
     /**
      * 将GitHub raw URL转换为jsDelivr CDN URL
@@ -61,11 +58,11 @@ class RemoteAudioLoader(private val context: Context) {
                 "https://cdn.jsdelivr.net/gh/$username/$repo@$branch/$path"
             } else {
                 // 如果无法匹配，返回原URL
-                Log.w(TAG, "无法转换URL，使用原URL: $githubUrl")
+                Logger.w(TAG, "无法转换URL，使用原URL: $githubUrl")
                 githubUrl
             }
         } catch (e: Exception) {
-            Log.e(TAG, "URL转换失败: ${e.message}", e)
+            Logger.e(TAG, "URL转换失败: ${e.message}", e)
             githubUrl
         }
     }
@@ -161,7 +158,7 @@ class RemoteAudioLoader(private val context: Context) {
                             val manifest = gson.fromJson(json, SoundsManifest::class.java)
                             
                             if (manifest.sounds.isEmpty()) {
-                                Log.w(TAG, "警告: 解析的 JSON 中没有音频！JSON 子串: ${json.take(200)}...")
+                                Logger.w(TAG, "警告: 解析的 JSON 中没有音频！JSON 子串: ${json.take(200)}...")
                             }
                             
                             // 一主二为：需业修复不完整的音频数据，然后转换 URL
@@ -170,13 +167,13 @@ class RemoteAudioLoader(private val context: Context) {
                             
                             return@withContext convertedManifest
                         } catch (jsonError: Exception) {
-                            Log.e(TAG, "JSON 解析失败: ${jsonError.javaClass.simpleName} - ${jsonError.message}")
-                            Log.e(TAG, "JSON 内容预览 (前500个字符): ${json.take(500)}")
+                            Logger.e(TAG, "JSON 解析失败: ${jsonError.javaClass.simpleName} - ${jsonError.message}")
+                            Logger.e(TAG, "JSON 内容预览 (前500个字符): ${json.take(500)}")
                             throw jsonError
                         }
                     } catch (e: Exception) {
                         lastException = e
-                        Log.w(TAG, "加载失败 (尝试 $attempt/$MAX_RETRY_COUNT, URL: $url): ${e.javaClass.simpleName} - ${e.message}")
+                        Logger.w(TAG, "加载失败 (尝试 $attempt/$MAX_RETRY_COUNT, URL: $url): ${e.javaClass.simpleName} - ${e.message}")
                         
                         // 如果不是最后一次尝试，等待后重试
                         if (attempt < MAX_RETRY_COUNT) {
@@ -187,11 +184,11 @@ class RemoteAudioLoader(private val context: Context) {
                 }
                 
                 // 当前URL所有重试都失败，尝试下一个URL
-                Log.w(TAG, "URL 加载失败: $url，尝试备用 URL...")
+                Logger.w(TAG, "URL 加载失败: $url，尝试备用 URL...")
             }
             
             // 所有URL都失败
-            Log.e(TAG, "加载网络音频清单失败，所有重试都广頙: ${lastException?.message}")
+            Logger.e(TAG, "加载网络音频清单失败，所有重试都广頙: ${lastException?.message}")
             throw lastException ?: IOException("加载清单失败")
         }
     }

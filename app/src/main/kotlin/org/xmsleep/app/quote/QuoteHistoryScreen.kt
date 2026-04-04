@@ -95,7 +95,7 @@ fun QuoteHistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(horizontal = 32.dp)
                 ) {
-                    org.xmsleep.app.ui.EmptyStateAnimation(size = 240.dp)
+                    org.xmsleep.app.ui.EmptyStateAnimation(animationSize = 240.dp)
                     Text(
                         text = context.getString(R.string.no_quote_history),
                         style = MaterialTheme.typography.titleMedium,

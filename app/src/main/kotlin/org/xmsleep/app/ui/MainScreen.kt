@@ -113,6 +113,11 @@ fun MainScreen(
     // 底部导航栏的背景色（用于毛玻璃效果）
     val navBarBackgroundColor = MaterialTheme.colorScheme.surface
     
+    // 最近播放弹窗显示设置
+    var showRecentPlayDialogSetting by remember { 
+        mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getShowRecentPlayDialog(context))
+    }
+    
     // 本地音频权限相关
     val requiredPermission = if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
         android.Manifest.permission.READ_MEDIA_AUDIO
@@ -692,10 +697,15 @@ fun MainScreen(
                     selectedColor = selectedColor,
                     useDynamicColor = useDynamicColor,
                     useBlackBackground = useBlackBackground,
+                    showRecentPlayDialog = showRecentPlayDialogSetting,
                     onDarkModeChange = onDarkModeChange,
                     onColorChange = onColorChange,
                     onDynamicColorChange = onDynamicColorChange,
                     onBlackBackgroundChange = onBlackBackgroundChange,
+                    onShowRecentPlayDialogChange = { enabled ->
+                        showRecentPlayDialogSetting = enabled
+                        org.xmsleep.app.preferences.PreferencesManager.saveShowRecentPlayDialog(context, enabled)
+                    },
                     onBack = { navigator.popBackStack() },
                     onScrollDetected = {
                         // 滚动时收缩悬浮按钮
@@ -940,17 +950,21 @@ fun MainScreen(
             }
         )
         
-        // 最近播放弹窗 - 只在应用启动时显示一次
+        // 最近播放弹窗 - 只在应用启动时显示一次（根据用户设置）
         var showRecentPlayDialog by remember { mutableStateOf(false) }
         
         // 使用静态变量确保只在应用启动时检查一次
         LaunchedEffect(Unit) {
             if (!hasCheckedRecentPlayOnLaunch) {
                 hasCheckedRecentPlayOnLaunch = true
-                val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
-                if (audioManager.hasRecentSounds(context)) {
-                    delay(500)
-                    showRecentPlayDialog = true
+                // 检查用户是否开启了最近播放弹窗
+                val shouldShow = org.xmsleep.app.preferences.PreferencesManager.getShowRecentPlayDialog(context)
+                if (shouldShow) {
+                    val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
+                    if (audioManager.hasRecentSounds(context)) {
+                        delay(500)
+                        showRecentPlayDialog = true
+                    }
                 }
             }
         }

@@ -708,12 +708,11 @@ private fun ExpandedPlayingList(
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // 播放列表（可滚动）- 底部留出按钮空间（48dp + 8dp间距 = 56dp）
+            // 播放列表（可滚动，占据剩余空间）
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(),
-                contentPadding = PaddingValues(bottom = 56.dp), // 为底部按钮留出空间
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(visiblePlayingSounds, key = { it.id }) { item ->
@@ -730,66 +729,87 @@ private fun ExpandedPlayingList(
                     )
                 }
             }
+            
+            // "添加到预设"按钮（固定在底部，与列表分离）
+            AddToPresetButton(
+                playingSounds = playingSounds,
+                onAddToPreset = onAddToPreset,
+                contentColor = contentColor,
+                buttonBackgroundColor = buttonBackgroundColor
+            )
         }
-        
-        // "添加到预设"按钮（固定在底部）
-        Surface(
+    }
+}
+
+/**
+ * "添加到预设"按钮组件
+ * 固定在底部，与音频列表分离，有上下间距
+ */
+@Composable
+private fun AddToPresetButton(
+    playingSounds: List<FloatingPlayItem>,
+    onAddToPreset: (localSounds: List<AudioManager.Sound>, remoteSoundIds: List<String>) -> Unit,
+    contentColor: Color,
+    buttonBackgroundColor: Color
+) {
+    val context = LocalContext.current
+    
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .padding(vertical = 12.dp), // 上下都有间距
+        color = buttonBackgroundColor,
+        shape = RoundedCornerShape(8.dp),
+        shadowElevation = 0.dp
+    ) {
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .align(Alignment.BottomCenter),
-            color = buttonBackgroundColor, // 使用与声音卡片相同的背景色
-            shape = RoundedCornerShape(8.dp),
-            shadowElevation = 0.dp // 无投影
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        // 分别收集本地声音和远程声音
-                        val localSounds = playingSounds.mapNotNull { item ->
-                            when (item) {
-                                is FloatingPlayItem.Local -> item.sound
-                                is FloatingPlayItem.Remote -> null
-                                is FloatingPlayItem.LocalAudio -> null
-                            }
-                        }
-                        val remoteSoundIds = playingSounds.mapNotNull { item ->
-                            when (item) {
-                                is FloatingPlayItem.Local -> null
-                                is FloatingPlayItem.Remote -> item.sound.id
-                                is FloatingPlayItem.LocalAudio -> null
-                            }
-                        }
-                        
-                        if (localSounds.isNotEmpty() || remoteSoundIds.isNotEmpty()) {
-                            onAddToPreset(localSounds, remoteSoundIds)
-                        } else {
-                            android.widget.Toast.makeText(
-                                context,
-                                context.getString(R.string.no_playing_sounds),
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
+                .fillMaxSize()
+                .clickable {
+                    // 分别收集本地声音和远程声音
+                    val localSounds = playingSounds.mapNotNull { item ->
+                        when (item) {
+                            is FloatingPlayItem.Local -> item.sound
+                            is FloatingPlayItem.Remote -> null
+                            is FloatingPlayItem.LocalAudio -> null
                         }
                     }
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.add_to_preset),
-                    color = contentColor,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+                    val remoteSoundIds = playingSounds.mapNotNull { item ->
+                        when (item) {
+                            is FloatingPlayItem.Local -> null
+                            is FloatingPlayItem.Remote -> item.sound.id
+                            is FloatingPlayItem.LocalAudio -> null
+                        }
+                    }
+                    
+                    if (localSounds.isNotEmpty() || remoteSoundIds.isNotEmpty()) {
+                        onAddToPreset(localSounds, remoteSoundIds)
+                    } else {
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.no_playing_sounds),
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.add_to_preset),
+                color = contentColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

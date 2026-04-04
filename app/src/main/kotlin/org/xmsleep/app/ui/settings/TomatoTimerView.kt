@@ -36,7 +36,7 @@ import org.xmsleep.app.MainActivity
 import org.xmsleep.app.R
 
 private const val NOTIFICATION_CHANNEL_ID = "tomato_timer_channel"
-private const val NOTIFICATION_ID = 1001
+private const val NOTIFICATION_ID = 1003  // 番茄钟通知（1001 被 MusicService，1002 被 BreathingService 占用）
 
 @Composable
 fun TomatoTimerView(

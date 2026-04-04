@@ -3,6 +3,7 @@ package org.xmsleep.app.weather
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import org.xmsleep.app.R
 
 object WeatherSoundMapper {
     private const val KEY_WEATHER_SOUND_MAPPING = "weather_sound_mapping"
@@ -176,5 +177,43 @@ object WeatherSoundMapper {
         }
 
         return emptyList()
+    }
+
+    /**
+     * 获取声音 ID 对应的名称字符串资源 ID
+     * 统一入口，避免 WeatherCard / WeatherDialogs 各自维护相同的 when 分支
+     */
+    fun getSoundNameResId(soundId: String): Int = when (soundId) {
+        "rain" -> R.string.weather_sound_rain
+        "light-rain" -> R.string.weather_sound_light_rain
+        "heavy-rain" -> R.string.weather_sound_heavy_rain
+        "thunderstorm" -> R.string.weather_sound_thunder
+        "wind" -> R.string.weather_sound_wind
+        "birds" -> R.string.weather_sound_birds
+        "river" -> R.string.weather_sound_river
+        "jungle" -> R.string.weather_sound_jungle
+        "campfire" -> R.string.weather_sound_fireplace
+        "waves" -> R.string.weather_sound_waves
+        "drizzle" -> R.string.weather_sound_drizzle
+        "walk-in-snow" -> R.string.weather_sound_walk_in_snow
+        "night-village" -> R.string.weather_sound_night
+        "crickets" -> R.string.weather_sound_crickets
+        "field" -> R.string.weather_sound_field
+        "lake" -> R.string.weather_sound_lake
+        "kitchen" -> R.string.weather_sound_kitchen
+        "wind-chimes" -> R.string.weather_sound_wind_chimes
+        "light-piano" -> R.string.weather_sound_light_piano
+        "rain-on-car-roof" -> R.string.weather_sound_rain_on_car_roof
+        "rain-on-umbrella" -> R.string.weather_sound_rain_on_umbrella
+        "rain-on-tent" -> R.string.weather_sound_rain_on_tent
+        "rain-on-leaves" -> R.string.weather_sound_rain_on_leaves
+        "rain-on-raincoat" -> R.string.weather_sound_rain_on_raincoat
+        "rain-on-windowsill" -> R.string.weather_sound_rain_on_windowsill
+        "rain-on-wooden-house" -> R.string.weather_sound_rain_on_wooden_house
+        "rain-while-driving" -> R.string.weather_sound_rain_while_driving
+        "rain-on-empty-street" -> R.string.weather_sound_rain_on_empty_street
+        "rain-on-eaves" -> R.string.weather_sound_rain_on_eaves
+        "heavy-rain-on-glass" -> R.string.weather_sound_heavy_rain_on_glass
+        else -> R.string.weather_sound_rain
     }
 }

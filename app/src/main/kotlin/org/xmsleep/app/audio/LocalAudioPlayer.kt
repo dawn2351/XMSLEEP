@@ -3,7 +3,7 @@ package org.xmsleep.app.audio
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,7 +84,7 @@ class LocalAudioPlayer private constructor() {
                 val oldestAudioId = playingQueue.poll()
                 if (oldestAudioId != null) {
                     stopAudio(oldestAudioId)
-                    Log.d(TAG, "达到最大并发数，停止最早的音频: $oldestAudioId")
+                    Logger.d(TAG, "达到最大并发数，停止最早的音频: $oldestAudioId")
                 }
             }
             
@@ -117,9 +117,9 @@ class LocalAudioPlayer private constructor() {
                     setOnPreparedListener {
                         try {
                             start()
-                            Log.d(TAG, "音频准备完成并开始播放: $audioId, 当前播放数: ${playingQueue.size}")
+                            Logger.d(TAG, "音频准备完成并开始播放: $audioId, 当前播放数: ${playingQueue.size}")
                         } catch (e: Exception) {
-                            Log.e(TAG, "启动播放失败: audioId=$audioId", e)
+                            Logger.e(TAG, "启动播放失败: audioId=$audioId", e)
                             playingStates.remove(audioId)
                             playingQueue.remove(audioId)
                             updatePlayingAudioIds()
@@ -128,7 +128,7 @@ class LocalAudioPlayer private constructor() {
                     }
                     
                     setOnErrorListener { _, what, extra ->
-                        Log.e(TAG, "播放错误: audioId=$audioId, what=$what, extra=$extra")
+                        Logger.e(TAG, "播放错误: audioId=$audioId, what=$what, extra=$extra")
                         onError("播放失败")
                         playingStates.remove(audioId)
                         mediaPlayers.remove(audioId)
@@ -139,15 +139,15 @@ class LocalAudioPlayer private constructor() {
                     
                     setOnCompletionListener {
                         // 循环播放，不应该触发这个回调
-                        Log.d(TAG, "音频播放完成（不应该发生）: $audioId")
+                        Logger.d(TAG, "音频播放完成（不应该发生）: $audioId")
                     }
                     
                     // 使用异步准备，避免阻塞UI
                     prepareAsync()
-                    Log.d(TAG, "开始准备音频: $audioId（异步）")
+                    Logger.d(TAG, "开始准备音频: $audioId（异步）")
                     
                 } catch (e: Exception) {
-                    Log.e(TAG, "设置音频源失败: audioId=$audioId", e)
+                    Logger.e(TAG, "设置音频源失败: audioId=$audioId", e)
                     playingStates.remove(audioId)
                     playingQueue.remove(audioId)
                     updatePlayingAudioIds()
@@ -159,7 +159,7 @@ class LocalAudioPlayer private constructor() {
             mediaPlayers[audioId] = mediaPlayer
             
         } catch (e: Exception) {
-            Log.e(TAG, "播放失败: audioId=$audioId", e)
+            Logger.e(TAG, "播放失败: audioId=$audioId", e)
             onError("播放失败: ${e.message}")
             playingStates.remove(audioId)
             mediaPlayers.remove(audioId)
@@ -192,17 +192,17 @@ class LocalAudioPlayer private constructor() {
             volumeSettings.remove(audioId)
             playingQueue.remove(audioId)
             updatePlayingAudioIds()
-            Log.d(TAG, "停止播放音频: $audioId, 剩余播放数: ${playingQueue.size}")
+            Logger.d(TAG, "停止播放音频: $audioId, 剩余播放数: ${playingQueue.size}")
             
             // 关键修复：单个本地音频文件停止后，保存当前正在播放的音频列表
             // 这样可以确保最近播放只包含当前正在播放的音频
             try {
                 org.xmsleep.app.audio.AudioManager.getInstance().saveRecentPlayingSounds()
             } catch (e: Exception) {
-                Log.e(TAG, "保存最近播放记录失败: ${e.message}")
+                Logger.e(TAG, "保存最近播放记录失败: ${e.message}")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "停止失败: audioId=$audioId", e)
+            Logger.e(TAG, "停止失败: audioId=$audioId", e)
         }
     }
     
@@ -215,9 +215,9 @@ class LocalAudioPlayer private constructor() {
             audioIds.forEach { audioId ->
                 stopAudio(audioId)
             }
-            Log.d(TAG, "停止所有音频")
+            Logger.d(TAG, "停止所有音频")
         } catch (e: Exception) {
-            Log.e(TAG, "停止所有音频失败", e)
+            Logger.e(TAG, "停止所有音频失败", e)
         }
     }
     
@@ -241,10 +241,10 @@ class LocalAudioPlayer private constructor() {
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "保存音频音量失败: audioId=$audioId", e)
+            Logger.e(TAG, "保存音频音量失败: audioId=$audioId", e)
         }
         
-        Log.d(TAG, "设置音频音量: audioId=$audioId, volume=$coercedVolume")
+        Logger.d(TAG, "设置音频音量: audioId=$audioId, volume=$coercedVolume")
     }
     
     /**
@@ -269,7 +269,7 @@ class LocalAudioPlayer private constructor() {
             val playing = mediaPlayers[audioId]?.isPlaying == true
             playing
         } catch (e: Exception) {
-            Log.e(TAG, "isAudioPlaying 检查失败: audioId=$audioId", e)
+            Logger.e(TAG, "isAudioPlaying 检查失败: audioId=$audioId", e)
             false
         }
     }
@@ -286,7 +286,7 @@ class LocalAudioPlayer private constructor() {
      */
     fun hasActiveAudio(): Boolean {
         val hasActive = mediaPlayers.isNotEmpty()
-        Log.d(TAG, "hasActiveAudio: $hasActive, 播放数: ${mediaPlayers.size}")
+        Logger.d(TAG, "hasActiveAudio: $hasActive, 播放数: ${mediaPlayers.size}")
         return hasActive
     }
     

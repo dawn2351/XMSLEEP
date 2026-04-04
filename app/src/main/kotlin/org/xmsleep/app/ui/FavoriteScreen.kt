@@ -381,7 +381,7 @@ fun FavoriteScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        EmptyStateAnimation(size = 240.dp)
+                        EmptyStateAnimation(animationSize = 240.dp)
                         Text(
                             context.getString(R.string.no_favorites),
                             style = MaterialTheme.typography.titleLarge,

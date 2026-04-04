@@ -6,6 +6,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import org.xmsleep.app.R
+import org.xmsleep.app.utils.NetworkClient
 import java.util.concurrent.TimeUnit
 
 data class WeatherData(
@@ -126,7 +127,7 @@ enum class WeatherType {
 }
 
 class WeatherService {
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClient.newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .build()

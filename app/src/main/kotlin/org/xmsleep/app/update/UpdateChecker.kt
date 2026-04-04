@@ -9,6 +9,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.xmsleep.app.Constants
 import org.xmsleep.app.utils.Logger
+import org.xmsleep.app.utils.NetworkClient
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -23,11 +24,7 @@ class UpdateChecker(
     private val repositoryName: String = "XMSLEEP",
     private val githubToken: String? = null
 ) {
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)  // 增加连接超时时间
-        .readTimeout(60, TimeUnit.SECONDS)     // 增加读取超时时间
-        .retryOnConnectionFailure(true)        // 启用连接失败重试
-        .build()
+    private val client = NetworkClient.default
     
     private val json = Json {
         ignoreUnknownKeys = true

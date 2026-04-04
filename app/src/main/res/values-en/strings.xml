@@ -515,4 +515,20 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="flip_clock_select_font">Select Font</string>
     <string name="flip_clock_font_bebas_neue_desc">Airport flight display style, extra bold</string>
     <string name="flip_clock_font_oswald_desc">Industrial vintage style</string>
+    
+    <!-- Widget -->
+    <string name="add_quote_widget">Add Widget</string>
+    <string name="add_quote_widget_description">Add daily quote widget to home screen</string>
+    <string name="widget_add_hint">Long press on empty area of home screen, select "Widgets", find XMSLEEP to add the quote widget</string>
+    <string name="widget_add_hint_manual">Long press on empty area of home screen, select "Widgets", find XMSLEEP to add the quote widget</string>
+    <string name="widget_add_failed">Cannot open home screen, please add widget manually</string>
+    <string name="widget_description">Daily Quote - Inspirational quotes</string>
+    <string name="widget_default_quote">Life is not just about the present, but also about poetry and distant places.</string>
+    <string name="widget_default_author">Unknown</string>
+    <string name="widget_loading">Loading...</string>
+    <string name="widget_refresh_failed">Refresh failed</string>
+    
+    <!-- Recent Play Dialog Settings -->
+    <string name="show_recent_play_dialog">Show Recent Play on Launch</string>
+    <string name="show_recent_play_dialog_description">Display quick access dialog for recently played audio when app starts</string>
 </resources>

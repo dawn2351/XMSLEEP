@@ -497,4 +497,20 @@
     <string name="tomato_start">開始</string>
     <string name="tomato_pause">暫停</string>
     <string name="tomato_reset">重置</string>
+    
+    <!-- 小組件 -->
+    <string name="add_quote_widget">添加小組件</string>
+    <string name="add_quote_widget_description">在桌面添加一言一句功能模組</string>
+    <string name="widget_add_hint">請長按桌面空白處，選擇「小組件」或「Widgets」，找到 XMSLEEP 添加一言一句組件</string>
+    <string name="widget_add_hint_manual">請長按桌面空白處，選擇「小組件」或「Widgets」，找到 XMSLEEP 添加一言一句組件</string>
+    <string name="widget_add_failed">無法打開桌面，請手動添加小組件</string>
+    <string name="widget_description">一言一句 - 每日名句</string>
+    <string name="widget_default_quote">生活不止眼前的苟且，還有詩和遠方。</string>
+    <string name="widget_default_author">佚名</string>
+    <string name="widget_loading">加載中...</string>
+    <string name="widget_refresh_failed">刷新失敗</string>
+    
+    <!-- 最近播放彈窗設定 -->
+    <string name="show_recent_play_dialog">啟動時顯示最近播放</string>
+    <string name="show_recent_play_dialog_description">應用啟動時顯示最近播放音頻的快速入口彈窗</string>
 </resources>

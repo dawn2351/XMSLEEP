@@ -482,7 +482,7 @@ fun LocalAudioScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.padding(horizontal = 32.dp)
                         ) {
-                            EmptyStateAnimation(size = 240.dp)
+                            EmptyStateAnimation(animationSize = 240.dp)
                             Text(
                                 text = context.getString(R.string.storage_permission_required),
                                 style = MaterialTheme.typography.titleLarge,
@@ -511,7 +511,7 @@ fun LocalAudioScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            EmptyStateAnimation(size = 240.dp)
+                            EmptyStateAnimation(animationSize = 240.dp)
                             Text(
                                 text = context.getString(R.string.no_local_audio),
                                 style = MaterialTheme.typography.titleLarge,

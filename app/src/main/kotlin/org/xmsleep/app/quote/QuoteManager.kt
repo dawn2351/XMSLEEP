@@ -1,7 +1,8 @@
 package org.xmsleep.app.quote
 
 import android.content.Context
-import android.util.Log
+import org.xmsleep.app.utils.Logger
+import org.xmsleep.app.utils.NetworkClient
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,7 +34,7 @@ class QuoteManager private constructor(private val context: Context) {
     }
     
     private val gson = Gson()
-    private val okHttpClient = OkHttpClient()
+    private val okHttpClient = NetworkClient.default
     private val prefs = context.getSharedPreferences("daily_quote", Context.MODE_PRIVATE)
     
     // 本地名句列表（懒加载）
@@ -51,17 +52,17 @@ class QuoteManager private constructor(private val context: Context) {
                 // 1. 尝试从API获取
                 val apiQuote = fetchQuoteFromAPI()
                 if (apiQuote != null) {
-                    Log.d(TAG, "从API获取名句成功: ${apiQuote.text}")
+                    Logger.d(TAG, "从API获取名句成功: ${apiQuote.text}")
                     // 保存到历史记录
                     saveToHistory(apiQuote)
                     return@withContext apiQuote
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "从API获取名句失败: ${e.message}")
+                Logger.e(TAG, "从API获取名句失败: ${e.message}")
             }
             
             // 2. API失败，使用本地备用
-            Log.d(TAG, "使用本地备用名句")
+            Logger.d(TAG, "使用本地备用名句")
             val localQuote = getLocalQuoteByDate()
             // 保存到历史记录
             saveToHistory(localQuote)
@@ -86,11 +87,11 @@ class QuoteManager private constructor(private val context: Context) {
                         gson.fromJson(json, Quote::class.java)
                     } else null
                 } else {
-                    Log.w(TAG, "API请求失败: ${response.code}")
+                    Logger.w(TAG, "API请求失败: ${response.code}")
                     null
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "API请求异常: ${e.message}")
+                Logger.e(TAG, "API请求异常: ${e.message}")
                 null
             }
         }
@@ -107,7 +108,7 @@ class QuoteManager private constructor(private val context: Context) {
             val manifest = gson.fromJson(json, QuotesManifest::class.java)
             manifest.quotes.map { it.toQuote() }
         } catch (e: Exception) {
-            Log.e(TAG, "加载本地名句失败: ${e.message}")
+            Logger.e(TAG, "加载本地名句失败: ${e.message}")
             emptyList()
         }
     }
@@ -201,9 +202,9 @@ class QuoteManager private constructor(private val context: Context) {
                 .putString("quote_history", json)
                 .apply()
             
-            Log.d(TAG, "保存历史记录成功，当前共 ${history.size} 条")
+            Logger.d(TAG, "保存历史记录成功，当前共 ${history.size} 条")
         } catch (e: Exception) {
-            Log.e(TAG, "保存历史记录失败: ${e.message}")
+            Logger.e(TAG, "保存历史记录失败: ${e.message}")
         }
     }
     
@@ -220,7 +221,7 @@ class QuoteManager private constructor(private val context: Context) {
                 emptyList()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "读取历史记录失败: ${e.message}")
+            Logger.e(TAG, "读取历史记录失败: ${e.message}")
             emptyList()
         }
     }
@@ -232,7 +233,7 @@ class QuoteManager private constructor(private val context: Context) {
         prefs.edit()
             .remove("quote_history")
             .apply()
-        Log.d(TAG, "历史记录已清空")
+        Logger.d(TAG, "历史记录已清空")
     }
 }
 

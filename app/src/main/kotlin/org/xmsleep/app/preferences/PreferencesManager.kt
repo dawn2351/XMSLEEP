@@ -45,9 +45,13 @@ object PreferencesManager {
     private val KEY_BACKGROUND_SELECTION = Constants.PrefsKeys.BACKGROUND_SELECTION
     private val KEY_AUTO_COUNTDOWN_MINUTES = Constants.PrefsKeys.AUTO_COUNTDOWN_MINUTES
     private val KEY_KEEP_SCREEN_ON = Constants.PrefsKeys.KEEP_SCREEN_ON
+    private val KEY_SHOW_RECENT_PLAY_DIALOG = Constants.PrefsKeys.SHOW_RECENT_PLAY_DIALOG
+    private val KEY_QUOTE_WIDGET_ADDED = Constants.PrefsKeys.QUOTE_WIDGET_ADDED
     
     /**
      * 从旧版本迁移数据（如果存在）
+     * 注意：由于包名从未变更（OLD_APP_PACKAGE == APP_PACKAGE），此迁移逻辑实际上是死代码。
+     * 保留方法签名以兼容现有调用点，但直接标记迁移完成跳过无效的 createPackageContext 调用。
      */
     fun migrateFromOldVersion(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -57,60 +61,10 @@ object PreferencesManager {
             return
         }
         
-        try {
-            // 尝试创建旧版本的Context来访问其SharedPreferences
-            val oldContext = context.createPackageContext(
-                Constants.OLD_APP_PACKAGE,
-                Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY
-            )
-            
-            val oldPrefs = oldContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            
-            // 迁移数据
-            val editor = prefs.edit()
-            
-            // 迁移深色模式
-            val darkMode = oldPrefs.getString(KEY_DARK_MODE, null)
-            if (darkMode != null) {
-                editor.putString(KEY_DARK_MODE, darkMode)
-            }
-            
-            // 迁移主题色
-            val selectedColor = oldPrefs.getLong(KEY_SELECTED_COLOR, -1L)
-            if (selectedColor != -1L) {
-                editor.putLong(KEY_SELECTED_COLOR, selectedColor)
-            }
-            
-            // 迁移动态颜色
-            if (oldPrefs.contains(KEY_USE_DYNAMIC_COLOR)) {
-                editor.putBoolean(KEY_USE_DYNAMIC_COLOR, oldPrefs.getBoolean(KEY_USE_DYNAMIC_COLOR, false))
-            }
-            
-            // 迁移纯黑背景
-            if (oldPrefs.contains(KEY_USE_BLACK_BACKGROUND)) {
-                editor.putBoolean(KEY_USE_BLACK_BACKGROUND, oldPrefs.getBoolean(KEY_USE_BLACK_BACKGROUND, false))
-            }
-            
-            // 迁移隐藏动画
-            if (oldPrefs.contains(KEY_HIDE_ANIMATION)) {
-                editor.putBoolean(KEY_HIDE_ANIMATION, oldPrefs.getBoolean(KEY_HIDE_ANIMATION, true))
-            }
-            
-            // 迁移声音卡片列数
-            if (oldPrefs.contains(KEY_SOUND_CARDS_COLUMNS_COUNT)) {
-                editor.putInt(KEY_SOUND_CARDS_COLUMNS_COUNT, oldPrefs.getInt(KEY_SOUND_CARDS_COLUMNS_COUNT, 2))
-            }
-            
-            // 标记迁移完成
-            editor.putBoolean(KEY_MIGRATION_DONE, true)
-            editor.apply()
-            
-            Logger.d("PreferencesManager", "成功从旧版本迁移数据")
-        } catch (e: Exception) {
-            // 如果无法访问旧版本（比如旧版本已卸载），标记迁移完成，避免重复尝试
-            prefs.edit().putBoolean(KEY_MIGRATION_DONE, true).apply()
-            Logger.d("PreferencesManager", "无法访问旧版本数据（可能已卸载）: ${e.message}")
-        }
+        // OLD_APP_PACKAGE 与 APP_PACKAGE 相同，createPackageContext 无法读取自身历史数据，
+        // 直接标记迁移完成，避免每次冷启动都触发一次必然失败的跨包 Context 创建。
+        prefs.edit().putBoolean(KEY_MIGRATION_DONE, true).apply()
+        Logger.d("PreferencesManager", "包名未变更，跳过旧版本数据迁移")
     }
     
     /**
@@ -650,6 +604,42 @@ object PreferencesManager {
     fun getKeepScreenOn(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_KEEP_SCREEN_ON, true)
+    }
+    
+    /**
+     * 保存是否显示最近播放弹窗设置
+     * @param show 是否显示，默认为 true
+     */
+    fun saveShowRecentPlayDialog(context: Context, show: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_SHOW_RECENT_PLAY_DIALOG, show).apply()
+    }
+    
+    /**
+     * 获取是否显示最近播放弹窗设置
+     * @return 是否显示，默认为 true
+     */
+    fun getShowRecentPlayDialog(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_SHOW_RECENT_PLAY_DIALOG, true)
+    }
+    
+    /**
+     * 保存一言一句小组件是否已添加
+     * @param added 是否已添加
+     */
+    fun saveQuoteWidgetAdded(context: Context, added: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_QUOTE_WIDGET_ADDED, added).apply()
+    }
+    
+    /**
+     * 获取一言一句小组件是否已添加
+     * @return 是否已添加，默认为 false
+     */
+    fun isQuoteWidgetAdded(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_QUOTE_WIDGET_ADDED, false)
     }
 }
 

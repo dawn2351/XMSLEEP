@@ -18,7 +18,7 @@ class BreathingService : Service() {
     
     companion object {
         const val CHANNEL_ID = "breathing_service_channel"
-        const val NOTIFICATION_ID = 1001
+        const val NOTIFICATION_ID = 1002  // 呼吸练习通知（1001 被 MusicService 占用）
         const val ACTION_STOP = "stop_breathing"
         
         var isRunning = false

@@ -28,6 +28,11 @@ object Constants {
     const val APP_PACKAGE = "org.xmsleep.app"
     
     // ==================== 旧版本信息（用于数据迁移）====================
+    // 注意：OLD_APP_PACKAGE 与 APP_PACKAGE 相同，说明包名从未变更过。
+    // migrateFromOldVersion 中的迁移逻辑实际上是死代码，首次运行时
+    // createPackageContext 会抛出 NameNotFoundException 并被 catch 捕获，
+    // 迁移标记会被置为 true，后续不再执行。保留此常量仅作历史记录。
+    @Deprecated("包名从未变更，迁移逻辑为死代码，不需要使用此常量")
     const val OLD_APP_PACKAGE = "org.xmsleep.app"
     
     // ==================== 外部链接 ====================
@@ -94,6 +99,11 @@ object Constants {
         const val BACKGROUND_SELECTION = "background_animation_selection"
         const val AUTO_COUNTDOWN_MINUTES = "auto_countdown_minutes"
         const val KEEP_SCREEN_ON = "keep_screen_on"
+        
+        // 最近播放弹窗开关
+        const val SHOW_RECENT_PLAY_DIALOG = "show_recent_play_dialog"
+        // 一言一句小组件相关
+        const val QUOTE_WIDGET_ADDED = "quote_widget_added"
         
         const val LANGUAGE_PREFS_NAME = "language_prefs"
         const val KEY_LANGUAGE = "language"
