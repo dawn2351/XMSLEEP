@@ -69,6 +69,19 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         
+        <!-- 一言一句小组件 -->
+        <receiver
+            android:name=".widget.QuoteWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="org.xmsleep.app.widget.REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quote_widget_info" />
+        </receiver>
+        
     </application>
 
 </manifest>

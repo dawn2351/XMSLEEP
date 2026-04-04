@@ -554,6 +554,7 @@
     <string name="widget_default_author">佚名</string>
     <string name="widget_loading">加载中...</string>
     <string name="widget_refresh_failed">刷新失败</string>
+    <string name="widget_refresh">刷新</string>
     
     <!-- 最近播放弹窗设置 -->
     <string name="show_recent_play_dialog">启动时显示最近播放</string>
