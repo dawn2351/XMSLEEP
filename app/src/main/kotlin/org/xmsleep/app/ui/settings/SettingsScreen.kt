@@ -62,6 +62,9 @@ fun SettingsScreen(
     onHideAnimationChange: (Boolean) -> Unit = {},
     backgroundSelection: BackgroundSelection = BackgroundSelection.None,
     onBackgroundSelectionChange: (BackgroundSelection) -> Unit = {},
+    paletteColors: List<androidx.compose.ui.graphics.Color> = emptyList(),
+    currentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
+    onColorChange: (androidx.compose.ui.graphics.Color) -> Unit = {},
     updateViewModel: org.xmsleep.app.update.UpdateViewModel,
     currentLanguage: LanguageManager.Language,
     onLanguageChange: (LanguageManager.Language) -> Unit,
@@ -143,7 +146,10 @@ fun SettingsScreen(
             isCalculatingCache = true
             cacheSize = calculateCacheSize(context)
             isCalculatingCache = false
-
+            
+            // 已禁用自动缓存清理，避免删除用户下载的音频
+            // 如需清理缓存，请用户手动点击"清理缓存"按钮
+            /*
             // 检查缓存是否超过200M (200 * 1024 * 1024 字节)
             val thresholdBytes = 200L * 1024 * 1024
             if (cacheSize > thresholdBytes && !isClearingCache) {
@@ -163,7 +169,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
+            */
+            
             // 每5秒更新一次缓存大小
             delay(5000)
         }
@@ -683,9 +690,9 @@ fun SettingsScreen(
                         try {
                             clearApplicationCache(context)
                             cacheSize = 0L  // 清理后重置缓存大小
-                            Toast.makeText(context, context.getString(R.string.cache_cleared_success), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "缓存清理成功", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
-                            Toast.makeText(context, context.getString(R.string.cache_clear_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "缓存清理失败: ${e.message ?: ""}", Toast.LENGTH_SHORT).show()
                         } finally {
                             isClearingCache = false
                             // 清理完成后重新计算缓存大小
@@ -721,11 +728,19 @@ fun SettingsScreen(
             
             BackgroundSelectionDialog(
                 currentSelection = tempSelection,
+                paletteColors = paletteColors,
+                currentColor = currentColor,
                 onSelectionChange = { selection ->
                     // 实时预览：只更新临时选择和UI显示
                     Logger.d("SettingsScreen", "选择变化（预览）: $selection")
                     tempSelection = selection
                     onBackgroundSelectionChange(selection) // 实时预览
+                },
+                onColorChange = {
+                    // 选颜色时自动切到无背景
+                    tempSelection = BackgroundSelection.None
+                    onBackgroundSelectionChange(BackgroundSelection.None)
+                    onColorChange(it)
                 },
                 onDismiss = {
                     // 取消时恢复原始选择
@@ -736,8 +751,6 @@ fun SettingsScreen(
                 onConfirm = {
                     // 确认时：确保状态和持久化都更新
                     Logger.d("SettingsScreen", "确认，保存选择: $tempSelection")
-                    // 注意：onBackgroundSelectionChange 内部已经调用了 saveBackgroundSelection
-                    // 所以这里只需要调用一次即可
                     onBackgroundSelectionChange(tempSelection)
                     showBackgroundDialog = false
                 },

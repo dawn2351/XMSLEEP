@@ -56,14 +56,11 @@ class AudioCacheManager private constructor(context: Context) {
     
     /**
      * 获取缓存的音频文件
-     * 支持多种格式：.mp3, .ogg, .wav
+     * 支持任意扩展名：查找 cacheDir 下以 soundId. 开头的文件
      */
     fun getCachedFile(soundId: String): File? {
-        // 按优先级检查所有可能的格式
-        val formats = listOf("mp3", "ogg", "wav")
-        for (format in formats) {
-            val file = File(cacheDir, "$soundId.$format")
-            if (file.exists() && file.length() > 0) {
+        cacheDir.listFiles()?.forEach { file ->
+            if (file.name.startsWith("$soundId.") && file.exists() && file.length() > 0) {
                 return file
             }
         }
@@ -425,13 +422,11 @@ class AudioCacheManager private constructor(context: Context) {
     
     /**
      * 删除指定音频的缓存
-     * 支持多种格式：.mp3, .ogg, .wav
+     * 支持任意扩展名
      */
     fun deleteCache(soundId: String) {
-        val formats = listOf("mp3", "ogg", "wav")
-        for (format in formats) {
-            val file = File(cacheDir, "$soundId.$format")
-            if (file.exists()) {
+        cacheDir.listFiles()?.forEach { file ->
+            if (file.name.startsWith("$soundId.") && file.exists()) {
                 file.delete()
             }
         }

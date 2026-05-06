@@ -345,10 +345,11 @@ fun XMSLEEPApp() {
                         
                         Logger.d("MainActivity", "=== 背景切换结束 ===")
                     },
-                    onSoundCardsColumnsCountChange = { 
+                    onSoundCardsColumnsCountChange = {
                         soundCardsColumnsCount = it
                         org.xmsleep.app.preferences.PreferencesManager.saveSoundCardsColumnsCount(context, it)
-                    }
+                    },
+                    paletteColors = paletteColors
                 )
             }
         }

@@ -286,6 +286,85 @@ data class SoundItem(
  *  - SoundsScreenContent.kt —— BuiltInSoundsContent / FavoriteSoundsContent / OnlineSoundsContent（~300行）
  * 拆分时注意 private 函数的可见性迁移。
  */
+
+/**
+ * 获取位置信息（优先缓存位置，若无则主动请求一次定位）
+ * @return Location 或 null
+ */
+@Suppress("MissingPermission")
+private fun obtainLocation(context: android.content.Context): android.location.Location? {
+    return try {
+        val locationManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+
+        // 优先使用缓存的位置
+        val cached = locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
+            ?: locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
+        if (cached != null) return cached
+
+        // 缓存为空时，尝试主动请求一次定位
+        // 注意：requestSingleUpdate 是阻塞调用，不应在主线程执行
+        var result: android.location.Location? = null
+        if (locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)) {
+            try {
+                locationManager.requestSingleUpdate(
+                    android.location.LocationManager.NETWORK_PROVIDER,
+                    object : android.location.LocationListener {
+                        override fun onLocationChanged(location: android.location.Location) { result = location }
+                        override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
+                        override fun onProviderEnabled(provider: String) {}
+                        override fun onProviderDisabled(provider: String) {}
+                    },
+                    android.os.Looper.getMainLooper()
+                )
+                // 等待定位结果，最多3秒
+                var waited = 0
+                while (result == null && waited < 3000) {
+                    Thread.sleep(100)
+                    waited += 100
+                }
+            } catch (e: Exception) {
+                Logger.w("WeatherHelper", "主动定位失败: ${e.message}")
+            }
+        }
+        result
+    } catch (e: Exception) {
+        Logger.e("WeatherHelper", "获取位置失败: ${e.message}")
+        null
+    }
+}
+
+/**
+ * 获取并刷新天气数据
+ * @return 刷新成功返回 WeatherData，失败返回 null
+ */
+private suspend fun fetchAndRefreshWeather(context: android.content.Context): WeatherData? {
+    // 检查位置权限
+    val hasLocationPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+        context, android.Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    if (!hasLocationPermission) return null
+
+    return try {
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val location = obtainLocation(context) ?: return@withContext null
+
+            val weatherService = WeatherService()
+            val result = weatherService.getWeather(location.latitude, location.longitude)
+            result.onSuccess { data ->
+                WeatherSoundMapper.saveLastWeather(
+                    context, data.weatherCode,
+                    location.latitude, location.longitude,
+                    data.temperature, data.cityName,
+                    data.humidity, data.feelsLike
+                )
+            }.getOrNull()
+        }
+    } catch (e: Exception) {
+        Logger.e("SoundsScreen", "获取天气失败: ${e.message}")
+        null
+    }
+}
 @Composable
 fun SoundsScreen(
     modifier: Modifier = Modifier,
@@ -403,77 +482,35 @@ fun SoundsScreen(
             return@LaunchedEffect
         }
 
-        // 先尝试加载上次缓存的天气
+        // 先尝试加载上次缓存的天气（立即显示）
         val lastWeather = WeatherSoundMapper.getLastWeather(context)
         if (lastWeather != null) {
             currentWeather = lastWeather
         }
 
-        // 检查位置权限
-        val hasLocationPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-            context, android.Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        // 如果缓存有效，先不刷新（等定期刷新）
+        if (WeatherSoundMapper.isWeatherCacheValid(context)) return@LaunchedEffect
 
-        if (!hasLocationPermission) return@LaunchedEffect
-
-        // 获取位置并刷新天气
-        try {
-            val locationManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
-            val location = locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-                ?: locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-
-            if (location != null) {
-                val weatherService = WeatherService()
-                val result = weatherService.getWeather(location.latitude, location.longitude)
-                result.onSuccess { data ->
-                    currentWeather = data
-                    WeatherSoundMapper.saveLastWeather(
-                        context, data.weatherCode,
-                        location.latitude, location.longitude,
-                        data.temperature, data.cityName,
-                        data.humidity, data.feelsLike
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Logger.e("SoundsScreen", "获取天气失败: ${e.message}")
-        }
+        // 缓存过期，立即刷新
+        fetchAndRefreshWeather(context)?.let { currentWeather = it }
     }
 
-    // 定期刷新天气数据（每5分钟）
+    // 定期刷新天气数据（每10分钟），带错误退避
     LaunchedEffect(weatherEnabled) {
         if (!weatherEnabled) return@LaunchedEffect
+        var consecutiveFailures = 0
         while (true) {
-            delay(5 * 60 * 1000) // 5分钟刷新一次
+            // 错误退避：连续失败时逐步增加间隔（最多30分钟）
+            val baseInterval = 10 * 60 * 1000L // 10分钟
+            val backoff = minOf(consecutiveFailures * 5 * 60 * 1000L, 30 * 60 * 1000L)
+            delay(baseInterval + backoff)
 
-            // 检查位置权限
-            val hasLocationPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
-            if (!hasLocationPermission) continue
-
-            // 获取位置并刷新天气
-            try {
-                val locationManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
-                val location = locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)
-                    ?: locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)
-
-                if (location != null) {
-                    val weatherService = WeatherService()
-                    val result = weatherService.getWeather(location.latitude, location.longitude)
-                    result.onSuccess { data ->
-                        currentWeather = data
-                        WeatherSoundMapper.saveLastWeather(
-                            context, data.weatherCode,
-                            location.latitude, location.longitude,
-                            data.temperature, data.cityName,
-                            data.humidity, data.feelsLike
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Logger.e("SoundsScreen", "获取天气失败: ${e.message}")
+            val result = fetchAndRefreshWeather(context)
+            if (result != null) {
+                currentWeather = result
+                consecutiveFailures = 0
+            } else {
+                consecutiveFailures++
             }
         }
     }
@@ -1185,14 +1222,18 @@ fun SoundsScreen(
                                                         }
                                                         is org.xmsleep.app.audio.DownloadProgress.Success -> {
                                                             downloadingSounds = downloadingSounds - sound.id
+                                                            // 等待文件系统同步后再播放
+                                                            delay(200)
                                                             val uri = resourceManager.getSoundUri(sound)
                                                             if (uri != null) {
                                                                 audioManager.playRemoteSound(context, sound, uri)
                                                             }
+                                                            return@collect
                                                         }
                                                         is org.xmsleep.app.audio.DownloadProgress.Error -> {
                                                             downloadingSounds = downloadingSounds - sound.id
                                                             android.widget.Toast.makeText(context, context.getString(R.string.download_failed) + ": ${progress.exception.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                                            return@collect
                                                         }
                                                     }
                                                 }

@@ -1,6 +1,7 @@
 package org.xmsleep.app.weather
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -135,16 +136,17 @@ class WeatherService {
     suspend fun getWeather(latitude: Double, longitude: Double): Result<WeatherData> {
         return withContext(Dispatchers.IO) {
             try {
-                val cityName = getCityName(latitude, longitude).getOrElse { "" }
-                
-                val url = "https://api.open-meteo.com/v1/forecast" +
+                // 并行请求城市名和天气数据
+                val cityNameDeferred = async { getCityName(latitude, longitude) }
+
+                val weatherUrl = "https://api.open-meteo.com/v1/forecast" +
                         "?latitude=$latitude" +
                         "&longitude=$longitude" +
                         "&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,is_day,cloud_cover" +
                         "&timezone=auto"
 
                 val request = Request.Builder()
-                    .url(url)
+                    .url(weatherUrl)
                     .get()
                     .build()
 
@@ -167,6 +169,9 @@ class WeatherService {
                 val precipitation = current.optDouble("precipitation", 0.0)
                 val isDay = current.optInt("is_day", 1) == 1
                 val cloudCover = current.optInt("cloud_cover", 0)
+
+                // 等待城市名请求完成（与天气请求并行，不额外增加延迟）
+                val cityName = cityNameDeferred.await().getOrElse { "" }
 
                 val weatherData = WeatherData(
                     temperature = temperature,

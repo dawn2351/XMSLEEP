@@ -260,15 +260,8 @@ internal fun DefaultArea(
                         }
 
                         items(displayedRemoteSounds) { sound ->
-                            val cacheManager = remember { org.xmsleep.app.audio.AudioCacheManager.getInstance(context) }
-                            var isCached by remember { mutableStateOf(cacheManager.getCachedFile(sound.id) != null) }
                             val downloadProgress = downloadingSounds[sound.id]
                             val isPlaying = playingRemoteSounds.contains(sound.id)
-                            LaunchedEffect(downloadProgress, sound.id) {
-                                if (downloadProgress == null || downloadProgress >= 1.0f) {
-                                    isCached = cacheManager.getCachedFile(sound.id) != null
-                                }
-                            }
                             Box(modifier = Modifier.width(100.dp)) {
                                 org.xmsleep.app.ui.starsky.RemoteSoundCard(
                                     sound = sound,

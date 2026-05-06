@@ -1,10 +1,15 @@
 package org.xmsleep.app.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -14,8 +19,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.xmsleep.app.R
@@ -25,9 +35,13 @@ import org.xmsleep.app.ui.BackgroundSelection
  * 背景选择对话框
  * 
  * 显示可选的背景动画选项，支持实时预览和选择
+ * 底部提供主题颜色选择（仅无背景时可用）
  * 
  * @param currentSelection 当前选中的背景
+ * @param paletteColors 调色板颜色列表
+ * @param currentColor 当前主题色
  * @param onSelectionChange 选择变化时的回调（用于实时预览）
+ * @param onColorChange 主题色变化时的回调
  * @param onDismiss 关闭对话框的回调
  * @param onConfirm 确认选择的回调
  * @param currentLanguage 当前语言（用于强制重组以更新文本）
@@ -35,7 +49,10 @@ import org.xmsleep.app.ui.BackgroundSelection
 @Composable
 fun BackgroundSelectionDialog(
     currentSelection: BackgroundSelection,
+    paletteColors: List<Color>,
+    currentColor: Color,
     onSelectionChange: (BackgroundSelection) -> Unit,
+    onColorChange: (Color) -> Unit,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     currentLanguage: org.xmsleep.app.i18n.LanguageManager.Language? = null
@@ -65,22 +82,88 @@ fun BackgroundSelectionDialog(
             Text(text = dialogTitle)
         },
         text = {
-            // 使用 LazyVerticalGrid 实现 2 列网格布局
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+            val context = LocalContext.current
+            val isNoneSelected = currentSelection == BackgroundSelection.None
+            val colorSectionTitle = remember(currentLanguage) { context.getString(R.string.theme_color) }
+
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                    .heightIn(max = 480.dp)
             ) {
-                items(backgroundOptions) { option ->
-                    BackgroundOptionItem(
-                        option = option,
-                        isSelected = option == currentSelection,
-                        onClick = { onSelectionChange(option) },
-                        currentLanguage = currentLanguage
-                    )
+                // 背景选择网格（固定高度，可内部滚动）
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.heightIn(max = 380.dp)
+                ) {
+                    items(backgroundOptions) { option ->
+                        BackgroundOptionItem(
+                            option = option,
+                            isSelected = option == currentSelection,
+                            onClick = { onSelectionChange(option) },
+                            currentLanguage = currentLanguage
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // 主题颜色选择区（仅无背景时显示）
+                if (isNoneSelected) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = colorSectionTitle,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(paletteColors) { color ->
+                                val isSelected = currentColor == color
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .then(
+                                            if (isSelected) {
+                                                Modifier.border(
+                                                    2.dp,
+                                                    MaterialTheme.colorScheme.primary,
+                                                    CircleShape
+                                                )
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
+                                        .clickable { onColorChange(color) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = if (color.luminance() > 0.5f) {
+                                                Color.Black.copy(alpha = 0.7f)
+                                            } else {
+                                                Color.White
+                                            },
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },

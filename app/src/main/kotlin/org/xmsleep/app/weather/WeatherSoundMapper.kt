@@ -15,6 +15,10 @@ object WeatherSoundMapper {
     private const val KEY_LAST_CITY_NAME = "last_city_name"
     private const val KEY_LAST_HUMIDITY = "last_humidity"
     private const val KEY_LAST_FEELS_LIKE = "last_feels_like"
+    private const val KEY_LAST_WEATHER_TIMESTAMP = "last_weather_timestamp"
+
+    /** 缓存有效期：30分钟 */
+    private const val WEATHER_CACHE_DURATION_MS = 30 * 60 * 1000L
 
     private val gson = Gson()
 
@@ -134,6 +138,7 @@ object WeatherSoundMapper {
             .putString(KEY_LAST_CITY_NAME, cityName)
             .putInt(KEY_LAST_HUMIDITY, humidity)
             .putFloat(KEY_LAST_FEELS_LIKE, feelsLike.toFloat())
+            .putLong(KEY_LAST_WEATHER_TIMESTAMP, System.currentTimeMillis())
             .apply()
     }
 
@@ -141,10 +146,10 @@ object WeatherSoundMapper {
         val prefs = context.getSharedPreferences("weather_prefs", Context.MODE_PRIVATE)
         val weatherCode = prefs.getInt(KEY_LAST_WEATHER_CODE, -1)
         if (weatherCode == -1) return null
-        
+
         val humidity = prefs.getInt(KEY_LAST_HUMIDITY, 0)
         val feelsLike = prefs.getFloat(KEY_LAST_FEELS_LIKE, 0f).toDouble()
-        
+
         return WeatherData(
             temperature = prefs.getFloat(KEY_LAST_TEMPERATURE, 0f).toDouble(),
             weatherCode = weatherCode,
@@ -155,6 +160,17 @@ object WeatherSoundMapper {
             humidity = humidity,
             feelsLike = feelsLike
         )
+    }
+
+    /**
+     * 检查缓存的天气数据是否过期
+     * @return true 表示缓存有效（未过期），false 表示已过期或不存在
+     */
+    fun isWeatherCacheValid(context: Context): Boolean {
+        val prefs = context.getSharedPreferences("weather_prefs", Context.MODE_PRIVATE)
+        val timestamp = prefs.getLong(KEY_LAST_WEATHER_TIMESTAMP, 0)
+        if (timestamp == 0L) return false
+        return (System.currentTimeMillis() - timestamp) < WEATHER_CACHE_DURATION_MS
     }
 
     fun getLastWeatherCode(context: Context): Int? {

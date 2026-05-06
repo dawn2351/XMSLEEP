@@ -54,6 +54,8 @@
     <string name="background_3">背景 3</string>
     <string name="background_4">背景 4</string>
     <string name="background_5">背景 5</string>
+    <string name="theme_color">主题颜色</string>
+    <string name="theme_color_disabled_hint">选择"无背景"后可切换主题颜色</string>
     <string name="background_preview">预览背景</string>
     
     <!-- 本地音频权限 -->

@@ -70,6 +70,8 @@
     <string name="background_3">背景 3</string>
     <string name="background_4">背景 4</string>
     <string name="background_5">背景 5</string>
+    <string name="theme_color">主题颜色</string>
+    <string name="theme_color_disabled_hint">选择"无背景"后可切换主题颜色</string>
     <string name="background_preview">预览背景</string>
     <string name="white_noise_cards">内置声音</string>
     <string name="builtin_sounds_offline_hint">内置声音无需联网直接听</string>
@@ -145,9 +147,6 @@
     <string name="high_contrast">高对比度</string>
     <string name="use_pure_black_background_in_dark_mode">在深色模式下使用纯黑背景</string>
     <string name="lottie_animation">Lottie 动画</string>
-    <string name="cache_cleared_success">缓存清理成功</string>
-    <string name="cache_clear_failed">缓存清理失败: %1$s</string>
-    <string name="delete_cache">删除缓存</string>
     <string name="cache_auto_cleared">缓存已超过200M，自动清理完成</string>
     <string name="must_download_before_pin">请先下载音频才能添加到固定声音区域</string>
     <string name="auto_clear_failed">自动清理失败: %1$s</string>

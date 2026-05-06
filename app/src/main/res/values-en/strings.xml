@@ -67,6 +67,8 @@
     <string name="background_3">Background 3</string>
     <string name="background_4">Background 4</string>
     <string name="background_5">Background 5</string>
+    <string name="theme_color">Theme Color</string>
+    <string name="theme_color_disabled_hint">Select \"No Background\" to change theme color</string>
     <string name="background_preview">Preview Background</string>
     <string name="white_noise_cards">White Noise Cards</string>
     <string name="builtin_sounds_offline_hint">Built-in sounds, no network required</string>
@@ -123,9 +125,6 @@
     <string name="high_contrast">High Contrast</string>
     <string name="use_pure_black_background_in_dark_mode">Use pure black background in dark mode</string>
     <string name="lottie_animation">Lottie Animation</string>
-    <string name="cache_cleared_success">Cache cleared successfully</string>
-    <string name="cache_clear_failed">Cache clear failed: %1$s</string>
-    <string name="delete_cache">Delete Cache</string>
     <string name="cache_auto_cleared">Cache exceeded 200M, automatically cleared</string>
     <string name="must_download_before_pin">Please download audio before adding to pinned sound area</string>
     <string name="auto_clear_failed">Auto clear failed: %1$s</string>

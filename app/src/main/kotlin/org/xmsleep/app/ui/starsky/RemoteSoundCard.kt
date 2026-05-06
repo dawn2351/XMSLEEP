@@ -51,47 +51,29 @@ fun RemoteSoundCard(
     cardHeight: Dp? = null,
     isEditMode: Boolean = false,
     onRemove: () -> Unit = {},
-    isInPresetDialog: Boolean = false // 新增参数：是否在预设弹窗中
+    isInPresetDialog: Boolean = false, // 新增参数：是否在预设弹窗中
 ) {
     val context = LocalContext.current
     val cacheManager = remember { 
         org.xmsleep.app.audio.AudioCacheManager.getInstance(context) 
     }
-    var isCached by remember(sound.id) { 
-        mutableStateOf(cacheManager.getCachedFile(sound.id) != null) 
+    var isCached by remember(sound.id) {
+        mutableStateOf(cacheManager.getCachedFile(sound.id) != null)
     }
-    
-    // 监听下载完成，更新缓存状态
-    LaunchedEffect(downloadProgress, sound.id, isPlaying) {
-        val cached = cacheManager.getCachedFile(sound.id) != null
-        if (cached != isCached) {
-            isCached = cached
-        }
-        
-        if (downloadProgress != null && downloadProgress >= 1.0f) {
-            delay(300)
+
+    // 统一的缓存状态同步：监听下载进度变化
+    LaunchedEffect(downloadProgress, sound.id) {
+        // 单卡下载完成后检查
+        if (downloadProgress == null || downloadProgress >= 1.0f) {
+            delay(200)
             val newCached = cacheManager.getCachedFile(sound.id) != null
             if (newCached != isCached) {
                 isCached = newCached
             }
         }
-        
-        if (downloadProgress == null) {
-            delay(300)
-            val newCached = cacheManager.getCachedFile(sound.id) != null
-            if (newCached != isCached) {
-                isCached = newCached
-            }
-        }
-        
-        if (isPlaying) {
-            val playingCached = cacheManager.getCachedFile(sound.id) != null
-            if (playingCached != isCached) {
-                isCached = playingCached
-            }
-        }
     }
-    
+
+    // 初始渲染时再次确认缓存状态
     LaunchedEffect(Unit) {
         delay(100)
         val cached = cacheManager.getCachedFile(sound.id) != null
@@ -289,52 +271,6 @@ fun RemoteSoundCard(
                                     ToastUtils.showToast(context, toastMessage)
                                 }
                             )
-                            
-                            if (isCached) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                            Text(
-                                                text = context.getString(R.string.delete_cache),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        scope.launch {
-                                            try {
-                                                cacheManager.deleteCache(sound.id)
-                                                val cachedFile = cacheManager.getCachedFile(sound.id)
-                                                if (cachedFile == null) {
-                                                    isCached = false
-                                                    Toast.makeText(
-                                                        context,
-                                                        context.getString(R.string.cache_cleared_success),
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.cache_clear_failed, e.message ?: ""),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                            showTitleMenu = false
-                                        }
-                                    }
-                                )
-                            }
                         }
                     }
                 }

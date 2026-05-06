@@ -88,7 +88,8 @@ fun MainScreen(
     onBlackBackgroundChange: (Boolean) -> Unit,
     onHideAnimationChange: (Boolean) -> Unit,
     onBackgroundSelectionChange: (org.xmsleep.app.ui.BackgroundSelection) -> Unit,
-    onSoundCardsColumnsCountChange: (Int) -> Unit
+    onSoundCardsColumnsCountChange: (Int) -> Unit,
+    paletteColors: List<androidx.compose.ui.graphics.Color>
 ) {
     // 使用Navigator接口来管理导航
     val navigator = rememberXMSleepNavigator()
@@ -654,6 +655,9 @@ fun MainScreen(
                                 onHideAnimationChange = onHideAnimationChange,
                                 backgroundSelection = backgroundSelection,
                                 onBackgroundSelectionChange = onBackgroundSelectionChange,
+                                paletteColors = paletteColors,
+                                currentColor = selectedColor,
+                                onColorChange = onColorChange,
                                 updateViewModel = updateViewModel,
                                 currentLanguage = currentLanguage,
                                 onLanguageChange = onLanguageChange,
