@@ -32,7 +32,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Bookmark
@@ -376,11 +376,10 @@ fun SoundsScreen(
     preset1Sounds: MutableState<MutableSet<AudioManager.Sound>>,
     preset2Sounds: MutableState<MutableSet<AudioManager.Sound>>,
     preset3Sounds: MutableState<MutableSet<AudioManager.Sound>>,
-    favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
     activePreset: Int = 1,
     onActivePresetChange: (Int) -> Unit = {},
     hasAnyPresetItems: Boolean = false,
-    onNavigateToFavorite: () -> Unit = {},
+    onNavigateToFlipClock: () -> Unit = {},
     onScrollDetected: () -> Unit = {},
     onQuickPlayExpand: () -> Unit = {},
     updateViewModel: UpdateViewModel? = null,
@@ -872,13 +871,13 @@ fun SoundsScreen(
                     }
                 }
                 
-                // 收藏按钮
+                // 番茄时钟按钮
                 IconButton(
-                    onClick = { onNavigateToFavorite() }
+                    onClick = { onNavigateToFlipClock() }
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.cards_star_24px),
-                        contentDescription = context.getString(R.string.tab_favorite),
+                        imageVector = Icons.Outlined.Timer,
+                        contentDescription = context.getString(R.string.tomato_timer_title),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -1009,7 +1008,6 @@ fun SoundsScreen(
                 hideAnimation = hideAnimation,
                 columnsCount = columnsCount,
                 pinnedSounds = pinnedSounds,
-                favoriteSounds = favoriteSounds,
                 scrollState = builtInScrollState,
                 onEditModeReset = { isDefaultAreaEditMode = false },
                 onPinnedChange = { sound, isPinned ->
@@ -1032,15 +1030,6 @@ fun SoundsScreen(
                         currentSet.remove(sound)
                         pinnedSounds.value = currentSet
                     }
-                },
-                onFavoriteChange = { sound, isFavorite ->
-                    val currentSet = favoriteSounds.value.toMutableSet()
-                    if (isFavorite) {
-                        currentSet.add(sound)
-                    } else {
-                        currentSet.remove(sound)
-                    }
-                    favoriteSounds.value = currentSet
                 }
             )
         } // end if (!weatherEnabled || currentWeather == null) - 内置声音模块
@@ -1140,7 +1129,6 @@ fun SoundsScreen(
                             DefaultArea(
                                 soundItems = soundItems,
                                 pinnedSounds = pinnedSounds,
-                                favoriteSounds = favoriteSounds,
                                 playingStates = playingStates,
                                 soundPlayingPreset = soundPlayingPreset,
                                 audioManager = audioManager,
@@ -1172,15 +1160,6 @@ fun SoundsScreen(
                                         currentSet.remove(sound)
                                         pinnedSounds.value = currentSet
                                     }
-                                },
-                                onFavoriteChange = { sound, isFavorite ->
-                                    val currentSet = favoriteSounds.value.toMutableSet()
-                                    if (isFavorite) {
-                                        currentSet.add(sound)
-                                    } else {
-                                        currentSet.remove(sound)
-                                    }
-                                    favoriteSounds.value = currentSet
                                 },
                                 remoteSounds = defaultRemoteSounds,
                                 remotePinned = remotePinned,

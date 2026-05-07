@@ -41,7 +41,6 @@ fun SoundCard(
     hideAnimation: Boolean = false,
     columnsCount: Int = 2,
     isPinned: Boolean = false,
-    isFavorite: Boolean = false,
     isBatchSelectMode: Boolean = false,
     isSelected: Boolean = false,
     canSelect: Boolean = true,
@@ -49,7 +48,6 @@ fun SoundCard(
     onVolumeClick: () -> Unit = {},
     onTitleClick: () -> Unit = {},
     onPinnedChange: (Boolean) -> Unit = {},
-    onFavoriteChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -122,9 +120,7 @@ fun SoundCard(
                         ) {
                             SoundCardMenuItems(
                                 isPinned = isPinned,
-                                isFavorite = isFavorite,
                                 onPinnedChange = onPinnedChange,
-                                onFavoriteChange = onFavoriteChange,
                                 onDismiss = { showTitleMenu = false }
                             )
                         }
@@ -171,9 +167,7 @@ fun SoundCard(
                         ) {
                             SoundCardMenuItems(
                                 isPinned = isPinned,
-                                isFavorite = isFavorite,
                                 onPinnedChange = onPinnedChange,
-                                onFavoriteChange = onFavoriteChange,
                                 onDismiss = { showTitleMenu = false }
                             )
                         }
@@ -227,9 +221,7 @@ fun SoundCard(
                     ) {
                         SoundCardMenuItems(
                             isPinned = isPinned,
-                            isFavorite = isFavorite,
                             onPinnedChange = onPinnedChange,
-                            onFavoriteChange = onFavoriteChange,
                             onDismiss = { showTitleMenu = false }
                         )
                     }
@@ -248,7 +240,7 @@ fun SoundCard(
                         onClick = onVolumeClick,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .offset(y = -4.dp)
+                            .offset(y = (-4).dp)
                             .size(40.dp)
                     ) {
                         Icon(
@@ -265,14 +257,12 @@ fun SoundCard(
 }
 
 /**
- * SoundCard 菜单项（置顶 + 收藏），抽取复用
+ * SoundCard 菜单项（仅置顶），抽取复用
  */
 @Composable
 private fun SoundCardMenuItems(
     isPinned: Boolean,
-    isFavorite: Boolean,
     onPinnedChange: (Boolean) -> Unit,
-    onFavoriteChange: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -302,35 +292,6 @@ private fun SoundCardMenuItems(
             ToastUtils.showToast(
                 context,
                 if (newState) context.getString(R.string.pinned_success) else context.getString(R.string.unpinned_success)
-            )
-        }
-    )
-    DropdownMenuItem(
-        text = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarOutline,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = if (isFavorite) context.getString(R.string.cancel_favorite) else context.getString(R.string.favorite),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-            }
-        },
-        onClick = {
-            val newState = !isFavorite
-            onFavoriteChange(newState)
-            onDismiss()
-            ToastUtils.showToast(
-                context,
-                if (newState) context.getString(R.string.favorited_success) else context.getString(R.string.unfavorited_success)
             )
         }
     )

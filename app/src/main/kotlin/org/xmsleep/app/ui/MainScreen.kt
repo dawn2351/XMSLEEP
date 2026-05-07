@@ -43,6 +43,7 @@ import org.xmsleep.app.ui.settings.ThemeSettingsScreen
 import org.xmsleep.app.ui.starsky.StarSkyScreen
 import org.xmsleep.app.ui.breathing.BreathingScreen
 import org.xmsleep.app.ui.flipclock.FlipClockScreen
+import org.xmsleep.app.ui.tomato.TomatoTimerScreen
 import org.xmsleep.app.update.UpdateDialog
 import org.xmsleep.app.utils.Logger
 import androidx.compose.ui.graphics.Color
@@ -307,36 +308,6 @@ fun MainScreen(
         org.xmsleep.app.preferences.PreferencesManager.saveActivePreset(context, activePreset)
     }
     
-    // 初始化收藏声音，从SharedPreferences读取保存的数据
-    val favoriteSounds = remember { 
-        mutableStateOf(
-            org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context)
-                .mapNotNull { soundName ->
-                    try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(soundName) } catch (e: Exception) { null }
-                }.toMutableSet()
-        )
-    }
-    
-    // 在应用退出前保存收藏数据
-    DisposableEffect(Unit) {
-        onDispose {
-            org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(
-                context,
-                favoriteSounds.value.map { it.name }.toSet()
-            )
-        }
-    }
-    
-    // 监听收藏声音的变化，保存到SharedPreferences
-    LaunchedEffect(favoriteSounds.value) {
-        // 注意：这里直接使用 RemoteFavorites 存储是为了兼容远程音频的存储方式
-        // 实际应该有单独的本地收藏存储，但当前系统混用了远程和本地
-        org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(
-            context, 
-            favoriteSounds.value.map { it.name }.toSet()
-        )
-    }
-    
     // AudioManager实例（用于播放/暂停快捷播放的声音）
     val audioManager = remember { org.xmsleep.app.audio.AudioManager.getInstance() }
     
@@ -376,22 +347,6 @@ fun MainScreen(
     
     // PreferencesManager实例（用于管理预设的远程声音）
     val preferencesManager = remember { org.xmsleep.app.preferences.PreferencesManager }
-    
-    // 应用启动时检查 SharedPreferences 中的收藏数据，确保数据一致
-    DisposableEffect(Unit) {
-        val savedFavorites = org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context)
-            .mapNotNull { soundName ->
-                try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(soundName) } catch (e: Exception) { null }
-            }.toMutableSet()
-        
-        // 如果读取到的数据与当前数据不一致，说明应用被关闭后重新打开，需要同步
-        if (savedFavorites.isNotEmpty() && favoriteSounds.value.isEmpty()) {
-            favoriteSounds.value = savedFavorites
-            Logger.d("MainScreen", "从SharedPreferences恢复收藏数据: ${savedFavorites.size}个")
-        }
-        
-        onDispose { /* 不需要清理 */ }
-    }
     
     // 检查所有预设是否都为空（只有当所有3个预设都为空时才隐藏预设模块）
     // 修复：同时检查本地音频预设和远程音频固定状态
@@ -446,7 +401,7 @@ fun MainScreen(
     // 监听当前路由，判断是否在二级页面
     val currentBackStackEntry by navigator.navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val isInSecondaryPage = currentRoute in listOf("theme", "favorite", "local_audio", "quoteHistory", "flipclock")
+    val isInSecondaryPage = currentRoute in listOf("theme", "local_audio", "quoteHistory", "flipclock", "tomato_timer")
     val isMainRoute = !isInSecondaryPage  // 主页面 = 不在二级页面
     val isFlipClockPage = currentRoute == "flipclock"
     
@@ -578,12 +533,11 @@ fun MainScreen(
                                 preset1Sounds = preset1Sounds,
                                 preset2Sounds = preset2Sounds,
                                 preset3Sounds = preset3Sounds,
-                                favoriteSounds = favoriteSounds,
                                 activePreset = activePreset,
                                 onActivePresetChange = { newPreset -> activePreset = newPreset },
                                 hasAnyPresetItems = defaultAreaHasSounds,
-                                onNavigateToFavorite = {
-                                    navigator.navigateToFavorite()
+                                onNavigateToFlipClock = {
+                                    navigator.navigateToTomatoTimer()
                                 },
                                 onScrollDetected = {
                                     // 滚动时，触发浮动按钮收缩
@@ -682,7 +636,6 @@ fun MainScreen(
                                     navigator.navigateToFlipClock()
                                 },
                                 pinnedSounds = pinnedSounds,
-                                favoriteSounds = favoriteSounds,
                                 locationPermissionLauncher = locationPermissionLauncher,
                                 onContentHiddenChange = { isHidden ->
                                     isSettingsContentHidden = isHidden
@@ -722,55 +675,6 @@ fun MainScreen(
                 )
             }
             
-            composable("favorite") {
-                org.xmsleep.app.ui.FavoriteScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    hideAnimation = hideAnimation,
-                    columnsCount = 3, // 收藏页面默认3列
-                    pinnedSounds = pinnedSounds,
-                    favoriteSounds = favoriteSounds,
-                    onBack = { navigator.popBackStack() },
-                    onScrollDetected = {
-                        // 滚动时收缩悬浮按钮
-                        shouldCollapseFloatingButton = true
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(100)
-                            shouldCollapseFloatingButton = false
-                        }
-                    },
-                    onPinnedChange = { sound, isPinned ->
-                        val currentSet = pinnedSounds.value.toMutableSet()
-                        if (isPinned) {
-                            // 检查是否已达到最大数量（3个）
-                            if (currentSet.size >= 3) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(R.string.max_3_sounds_limit),
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                currentSet.add(sound)
-                                pinnedSounds.value = currentSet
-                            }
-                        } else {
-                            currentSet.remove(sound)
-                            pinnedSounds.value = currentSet
-                        }
-                    },
-                    onFavoriteChange = { sound, isFavorite ->
-                        val currentSet = favoriteSounds.value.toMutableSet()
-                        if (isFavorite) {
-                            currentSet.add(sound)
-                        } else {
-                            currentSet.remove(sound)
-                        }
-                        favoriteSounds.value = currentSet
-                    }
-                )
-            }
-            
             composable("local_audio") {
                 org.xmsleep.app.ui.LocalAudioScreen(
                     modifier = Modifier.fillMaxSize(),
@@ -790,6 +694,12 @@ fun MainScreen(
             
             composable("flipclock") {
                 FlipClockScreen(
+                    onBack = { navigator.popBackStack() }
+                )
+            }
+            
+            composable("tomato_timer") {
+                TomatoTimerScreen(
                     onBack = { navigator.popBackStack() }
                 )
             }

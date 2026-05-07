@@ -490,6 +490,7 @@
     <string name="breath_count">第 %1$d 次呼吸</string>
     
     <!-- 番茄計時器 -->
+    <string name="tomato_timer_title">番茄時鐘</string>
     <string name="tomato_today_completed">今日完成：%1$d 個番茄</string>
     <string name="tomato_focus">專注</string>
     <string name="tomato_break">休息</string>

@@ -9,9 +9,14 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.Settings
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +32,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -912,6 +919,26 @@ fun LocalAudioItem(
 ) {
     val localAudioPlayer = remember { LocalAudioPlayer.getInstance() }
 
+    // 按压动画
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "card_scale"
+    )
+    val cardAlpha by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "card_alpha"
+    )
+
     // 播放进度状态
     var currentProgress by remember { mutableIntStateOf(0) }
     var totalDuration by remember { mutableIntStateOf(audio.duration.toInt()) }
@@ -933,13 +960,17 @@ fun LocalAudioItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .scale(scale)
+            .alpha(cardAlpha)
             .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
                 onClick = onCardClick,
                 onLongClick = onLongPress
             ),
         colors = CardDefaults.cardColors(
             containerColor = if (isPlaying) {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             }

@@ -493,6 +493,7 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="tab_settings">Settings</string>
     
     <!-- Tomato Timer -->
+    <string name="tomato_timer_title">Focus Timer</string>
     <string name="tomato_today_completed">Today: %1$d pomodoros</string>
     <string name="tomato_focus">Focus</string>
     <string name="tomato_break">Break</string>

@@ -73,7 +73,6 @@ fun SettingsScreen(
     onNavigateToQuoteHistory: () -> Unit = {},
     onNavigateToFlipClock: () -> Unit = {},
     pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
-    favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
     locationPermissionLauncher: androidx.activity.compose.ManagedActivityResultLauncher<String, Boolean>,
     onScrollDetected: () -> Unit = {},
     onContentHiddenChange: (Boolean) -> Unit = {}
@@ -629,21 +628,6 @@ fun SettingsScreen(
                     }
                 }
             }
-            }
-        }
-        
-        // 番茄计时器（当内容隐藏时显示）
-        if (isContentHidden) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                TomatoTimerView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.78f)
-                        .padding(bottom = 60.dp)
-                )
             }
         }
         

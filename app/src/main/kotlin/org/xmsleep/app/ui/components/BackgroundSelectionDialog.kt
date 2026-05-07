@@ -152,7 +152,7 @@ fun BackgroundSelectionDialog(
                                         Icon(
                                             Icons.Default.Check,
                                             contentDescription = null,
-                                            tint = if (color.luminance() > 0.5f) {
+                                            tint = if (color.luminance() > 0.35f) {
                                                 Color.Black.copy(alpha = 0.7f)
                                             } else {
                                                 Color.White

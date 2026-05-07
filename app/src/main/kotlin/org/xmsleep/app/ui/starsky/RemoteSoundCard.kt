@@ -43,9 +43,7 @@ fun RemoteSoundCard(
     isDownloadingButNoProgress: Boolean = false,
     columnsCount: Int = 2,
     isPinned: Boolean = false,
-    isFavorite: Boolean = false,
     onPinnedChange: (Boolean) -> Unit = {},
-    onFavoriteChange: (Boolean) -> Unit = {},
     onCardClick: () -> Unit,
     onVolumeClick: () -> Unit,
     cardHeight: Dp? = null,
@@ -223,57 +221,9 @@ fun RemoteSoundCard(
                                     }
                                 }
                             )
-                            
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isFavorite) {
-                                                Icons.Default.Star
-                                            } else {
-                                                Icons.Default.StarOutline
-                                            },
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = if (isFavorite) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
-                                        )
-                                        Text(
-                                            text = if (isFavorite) {
-                                                context.getString(R.string.cancel_favorite)
-                                            } else {
-                                                context.getString(R.string.favorite)
-                                            },
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isFavorite) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            }
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    val newFavoriteState = !isFavorite
-                                    onFavoriteChange(newFavoriteState)
-                                    showTitleMenu = false
-                                    val toastMessage = if (newFavoriteState) {
-                                        context.getString(R.string.favorited_success)
-                                    } else {
-                                        context.getString(R.string.unfavorited_success)
-                                    }
-                                    ToastUtils.showToast(context, toastMessage)
-                                }
-                            )
                         }
                     }
-                }
+            }
                 
                 // 音频可视化器
                 if (isPlaying) {

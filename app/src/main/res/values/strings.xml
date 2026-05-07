@@ -535,6 +535,7 @@
     <string name="tab_settings">设置</string>
     
     <!-- 番茄计时器 -->
+    <string name="tomato_timer_title">番茄时钟</string>
     <string name="tomato_today_completed">今日完成：%1$d 个番茄</string>
     <string name="tomato_focus">专注</string>
     <string name="tomato_break">休息</string>

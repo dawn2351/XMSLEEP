@@ -47,7 +47,6 @@ import org.xmsleep.app.utils.Logger
 internal fun DefaultArea(
     soundItems: List<SoundItem>,
     pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
-    favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
     playingStates: MutableMap<AudioManager.Sound, Boolean>,
     soundPlayingPreset: MutableMap<AudioManager.Sound, Int>,
     audioManager: AudioManager,
@@ -60,7 +59,6 @@ internal fun DefaultArea(
     activePreset: Int = 1,
     onActivePresetChange: (Int) -> Unit = {},
     onPinnedChange: (AudioManager.Sound, Boolean) -> Unit,
-    onFavoriteChange: (AudioManager.Sound, Boolean) -> Unit,
     onEnterBatchSelectMode: () -> Unit = {},
     showEditButton: Boolean = true,
     remoteSounds: List<org.xmsleep.app.audio.model.SoundMetadata> = emptyList(),
@@ -207,7 +205,6 @@ internal fun DefaultArea(
                                 item = item,
                                 isPlaying = playingStates[item.sound] ?: false,
                                 showPlayingIndicator = (playingStates[item.sound] == true) && (soundPlayingPreset[item.sound] == activePreset),
-                                isFavorite = favoriteSounds.value.contains(item.sound),
                                 isEditMode = isEditMode,
                                 onToggle = { sound ->
                                     Logger.d("SoundsScreen", "DefaultCard onToggle: ${sound.name}")
@@ -241,12 +238,6 @@ internal fun DefaultArea(
                                     }
                                     pinnedSounds.value = currentSet
                                     onPinnedChange(item.sound, isPinned)
-                                },
-                                onFavoriteChange = { isFavorite ->
-                                    val currentSet = favoriteSounds.value.toMutableSet()
-                                    if (isFavorite) currentSet.add(item.sound) else currentSet.remove(item.sound)
-                                    favoriteSounds.value = currentSet
-                                    onFavoriteChange(item.sound, isFavorite)
                                 }
                             )
                             if (showVolumeDialog) {
@@ -270,9 +261,7 @@ internal fun DefaultArea(
                                     downloadProgress = downloadProgress,
                                     columnsCount = 3,
                                     isPinned = remotePinned.contains(sound.id),
-                                    isFavorite = false,
                                     onPinnedChange = { isPinned -> onRemotePinnedChange(sound.id, isPinned) },
-                                    onFavoriteChange = { },
                                     onCardClick = { onRemoteCardClick(sound) },
                                     onVolumeClick = { },
                                     cardHeight = 80.dp,
@@ -329,12 +318,10 @@ internal fun DefaultCard(
     item: SoundItem,
     isPlaying: Boolean,
     showPlayingIndicator: Boolean = isPlaying,
-    isFavorite: Boolean,
     isEditMode: Boolean = false,
     onToggle: (AudioManager.Sound) -> Unit,
     onRemove: () -> Unit = {},
     onPinnedChange: (Boolean) -> Unit = {},
-    onFavoriteChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val alpha by androidx.compose.animation.core.animateFloatAsState(
@@ -397,11 +384,9 @@ internal fun BuiltInSoundsContent(
     hideAnimation: Boolean = false,
     columnsCount: Int = 2,
     pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
-    favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
     scrollState: LazyGridState,
     onEditModeReset: () -> Unit,
     onPinnedChange: (AudioManager.Sound, Boolean) -> Unit,
-    onFavoriteChange: (AudioManager.Sound, Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val colorScheme = MaterialTheme.colorScheme
@@ -423,7 +408,6 @@ internal fun BuiltInSoundsContent(
                         hideAnimation = hideAnimation,
                         columnsCount = columnsCount,
                         isPinned = pinnedSounds.value.contains(item.sound),
-                        isFavorite = favoriteSounds.value.contains(item.sound),
                         onToggle = { sound ->
                             onEditModeReset()
                             val wasPlaying = audioManager.isPlayingSound(sound)
@@ -451,12 +435,6 @@ internal fun BuiltInSoundsContent(
                             }
                             pinnedSounds.value = currentSet
                             onPinnedChange(item.sound, isPinned)
-                        },
-                        onFavoriteChange = { isFavorite ->
-                            val currentSet = favoriteSounds.value.toMutableSet()
-                            if (isFavorite) currentSet.add(item.sound) else currentSet.remove(item.sound)
-                            favoriteSounds.value = currentSet
-                            onFavoriteChange(item.sound, isFavorite)
                         }
                     )
                     if (showVolumeDialog) {
@@ -490,103 +468,6 @@ internal fun BuiltInSoundsContent(
                             )
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-/**
- * 收藏声音内容
- */
-@Composable
-internal fun FavoriteSoundsContent(
-    soundItems: List<SoundItem>,
-    playingStates: MutableMap<AudioManager.Sound, Boolean>,
-    audioManager: AudioManager,
-    context: android.content.Context,
-    hideAnimation: Boolean = false,
-    columnsCount: Int = 2,
-    pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
-    favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
-    scrollState: LazyGridState,
-    onPinnedChange: (AudioManager.Sound, Boolean) -> Unit,
-    onFavoriteChange: (AudioManager.Sound, Boolean) -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    val favoriteItems = remember(favoriteSounds.value) {
-        soundItems.filter { favoriteSounds.value.contains(it.sound) }
-    }
-    if (favoriteItems.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                EmptyStateAnimation(animationSize = 240.dp)
-                Text(context.getString(R.string.no_favorites), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(context.getString(R.string.favorites_will_show_here), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(columnsCount),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 140.dp, top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            state = scrollState,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(favoriteItems) { item ->
-                var showVolumeDialog by remember { mutableStateOf(false) }
-                SoundCard(
-                    item = item,
-                    isPlaying = playingStates[item.sound] ?: false,
-                    hideAnimation = hideAnimation,
-                    columnsCount = columnsCount,
-                    isPinned = pinnedSounds.value.contains(item.sound),
-                    isFavorite = favoriteSounds.value.contains(item.sound),
-                    onToggle = { sound ->
-                        val wasPlaying = audioManager.isPlayingSound(sound)
-                        if (wasPlaying) {
-                            audioManager.pauseSound(sound)
-                            playingStates[sound] = false
-                        } else {
-                            playingStates[sound] = true
-                            audioManager.playSound(context, sound)
-                            scope.launch {
-                                delay(200)
-                                playingStates[sound] = audioManager.isPlayingSound(sound)
-                            }
-                        }
-                    },
-                    onVolumeClick = { showVolumeDialog = true },
-                    onTitleClick = { },
-                    onPinnedChange = { isPinned ->
-                        val currentSet = pinnedSounds.value.toMutableSet()
-                        if (isPinned) {
-                            currentSet.add(item.sound)
-                            playingStates[item.sound] = audioManager.isPlayingSound(item.sound)
-                        } else {
-                            currentSet.remove(item.sound)
-                        }
-                        pinnedSounds.value = currentSet
-                        onPinnedChange(item.sound, isPinned)
-                    },
-                    onFavoriteChange = { isFavorite ->
-                        val currentSet = favoriteSounds.value.toMutableSet()
-                        if (isFavorite) currentSet.add(item.sound) else currentSet.remove(item.sound)
-                        favoriteSounds.value = currentSet
-                        onFavoriteChange(item.sound, isFavorite)
-                    }
-                )
-                if (showVolumeDialog) {
-                    VolumeDialog(
-                        sound = item.sound,
-                        currentVolume = audioManager.getVolume(item.sound),
-                        onDismiss = { showVolumeDialog = false },
-                        onVolumeChange = { audioManager.setVolume(item.sound, it) }
-                    )
                 }
             }
         }

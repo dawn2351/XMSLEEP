@@ -738,7 +738,6 @@ fun StarSkyScreen(
                         isDownloadingButNoProgress = downloadingButNoProgress.contains(sound.id),
                         columnsCount = columnsCount,
                         isPinned = remotePinned.contains(sound.id),
-                        isFavorite = remoteFavorites.contains(sound.id),
                         onPinnedChange = { isPinned ->
                             val newSet = remotePinned.toMutableSet()
                             if (isPinned) {
@@ -763,16 +762,6 @@ fun StarSkyScreen(
                                 remotePinned = newSet
                                 org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                             }
-                        },
-                        onFavoriteChange = { isFavorite ->
-                            val newSet = remoteFavorites.toMutableSet()
-                            if (isFavorite) {
-                                newSet.add(sound.id)
-                            } else {
-                                newSet.remove(sound.id)
-                            }
-                            remoteFavorites = newSet
-                            org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(context, newSet)
                         },
                         onCardClick = {
                             scope.launch {
@@ -900,7 +889,6 @@ fun StarSkyScreen(
                             isDownloadingButNoProgress = downloadingButNoProgress.contains(sound.id),
                             columnsCount = columnsCount,
                             isPinned = remotePinned.contains(sound.id),
-                            isFavorite = remoteFavorites.contains(sound.id),
                             onPinnedChange = { isPinned ->
                                 val newSet = remotePinned.toMutableSet()
                                 if (isPinned) {
@@ -926,16 +914,6 @@ fun StarSkyScreen(
                                     remotePinned = newSet
                                     org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                                 }
-                            },
-                            onFavoriteChange = { isFavorite ->
-                                val newSet = remoteFavorites.toMutableSet()
-                                if (isFavorite) {
-                                    newSet.add(sound.id)
-                                } else {
-                                    newSet.remove(sound.id)
-                                }
-                                remoteFavorites = newSet
-                                org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(context, newSet)
                             },
                             onCardClick = {
                                 scope.launch {
