@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.xmsleep.app.R
+import org.xmsleep.app.i18n.LanguageManager
 import org.xmsleep.app.ui.BackgroundSelection
 
 /**
@@ -58,7 +59,10 @@ fun BackgroundSelectionDialog(
     currentLanguage: org.xmsleep.app.i18n.LanguageManager.Language? = null
 ) {
     val context = LocalContext.current
-    
+    val localizedContext = remember(currentLanguage) {
+        if (currentLanguage != null) LanguageManager.createLocalizedContext(context, currentLanguage) else context
+    }
+
     // 所有可选的背景选项
     val backgroundOptions = remember {
         listOf(
@@ -70,11 +74,11 @@ fun BackgroundSelectionDialog(
             BackgroundSelection.Background5
         )
     }
-    
-    // 获取字符串资源，使用 currentLanguage 作为 key 确保语言切换时重新组合
-    val dialogTitle = remember(currentLanguage) { context.getString(R.string.select_background) }
-    val confirmText = remember(currentLanguage) { context.getString(android.R.string.ok) }
-    val cancelText = remember(currentLanguage) { context.getString(android.R.string.cancel) }
+
+    // 获取字符串资源，使用 localizedContext 确保多语言实时生效
+    val dialogTitle = remember(currentLanguage) { localizedContext.getString(R.string.select_background) }
+    val confirmText = remember(currentLanguage) { localizedContext.getString(android.R.string.ok) }
+    val cancelText = remember(currentLanguage) { localizedContext.getString(android.R.string.cancel) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -82,9 +86,8 @@ fun BackgroundSelectionDialog(
             Text(text = dialogTitle)
         },
         text = {
-            val context = LocalContext.current
             val isNoneSelected = currentSelection == BackgroundSelection.None
-            val colorSectionTitle = remember(currentLanguage) { context.getString(R.string.theme_color) }
+            val colorSectionTitle = remember(currentLanguage) { localizedContext.getString(R.string.theme_color) }
 
             Column(
                 modifier = Modifier
@@ -198,10 +201,13 @@ private fun BackgroundOptionItem(
     currentLanguage: org.xmsleep.app.i18n.LanguageManager.Language? = null
 ) {
     val context = LocalContext.current
-    
-    // 获取显示名称和选中文本，使用 currentLanguage 作为 key 确保语言切换时重新获取
-    val displayName = remember(option, currentLanguage) { option.getDisplayName(context) }
-    val selectedText = remember(currentLanguage) { context.getString(R.string.selected) }
+    val localizedContext = remember(currentLanguage) {
+        if (currentLanguage != null) LanguageManager.createLocalizedContext(context, currentLanguage) else context
+    }
+
+    // 获取显示名称和选中文本，使用 localizedContext 确保多语言实时生效
+    val displayName = remember(option, currentLanguage) { option.getDisplayName(localizedContext) }
+    val selectedText = remember(currentLanguage) { localizedContext.getString(R.string.selected) }
     
     Card(
         onClick = onClick,
