@@ -98,12 +98,51 @@ Built with Material Design 3 guidelines, the app features a clean and beautiful 
 
 ## 📦 Current Version
 
-- **Version**: 2.1.5
-- **Version Code**: 35
+- **Version**: 2.2.2
+- **Version Code**: 38
 - **Min SDK**: Android 8.0 (API 26)
 - **Target SDK**: Android 15 (API 35)
 
 ## 🆕 Latest Updates
+
+### v2.2.2
+#### 🎨 New Features
+- **Daily Quote Widget**: Added home screen widget displaying time, daily quote, and refresh button
+
+### v2.2.1
+#### 🎨 New Features
+- **Breathing Exercise**: Added guided breathing feature to help users relax
+
+#### ✨ Improvements
+- **Screen On**: Optimized screen-on settings
+- **Weather Audio Mapping**: Improved weather and audio mapping
+
+### v2.2.0 (2025-02-03)
+
+#### 🎨 New Features
+- **WebP Animated Backgrounds**: Added dynamic background feature with multiple beautiful WebP animated background options
+- **Glassmorphism Effect**: Implemented true glassmorphism blur effect for bottom navigation bar, enhancing visual experience
+
+#### ✨ Improvements
+- **UI Layout Optimization**:
+  - Adjusted bottom navigation bar position (from 46dp to 32dp) for better screen alignment
+  - Optimized spacing between bottom navigation bar and floating button to avoid overlap
+  - Improved content scrolling experience
+  
+- **Toast Display Optimization**:
+  - Fixed Toast center display issue
+  - Cleaned up unused code comments
+
+- **Dynamic Color Feature**:
+  - Fixed and optimized dynamic theme color extraction functionality
+  - Improved color adaptation effects
+
+- **Settings Page Optimization**:
+  - Optimized countdown display for light bulb feature
+
+#### 🔧 Technical Improvements
+- Code structure optimization
+- Performance enhancements
 
 ### v2.1.5 (2025-01-16)
 - 🎵 **Audio Optimization**: All audio files converted to OGG format for better compatibility
@@ -205,7 +244,7 @@ Issues and Pull Requests are welcome!
 
 **⭐ If this project helps you, please give it a Star!**
 
-© 2025 XMSLEEP. All rights reserved.
+© 2026 XMSLEEP. All rights reserved.
 
 </div>
 

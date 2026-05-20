@@ -4,7 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import org.xmsleep.app.audio.AudioManager
 import org.xmsleep.app.timer.TimerManager
 import java.util.concurrent.TimeUnit
@@ -43,8 +43,13 @@ class MusicService : Service() {
         }
         
         override fun onTimerFinished() {
+            // 倒计时结束，停止所有音频播放
+            audioManager.stopAllSounds()
             timeLeftText = null
             updateNotification()
+            // 停止服务
+            stopForeground(true)
+            stopSelf()
         }
         
         override fun onTimerCancelled() {
@@ -208,7 +213,7 @@ class MusicService : Service() {
                     try {
                         audioManager.playSound(applicationContext ?: return, sound)
                     } catch (e: Exception) {
-                        Log.e(TAG, "恢复本地播放 $sound 失败: ${e.message}")
+                        Logger.e(TAG, "恢复本地播放 $sound 失败: ${e.message}")
                     }
                 }
                 
@@ -222,10 +227,10 @@ class MusicService : Service() {
                             val (metadata, uri) = metadataAndUri
                             audioManager.playRemoteSound(applicationContext ?: return, metadata, uri)
                         } else {
-                            Log.w(TAG, "无法恢复远程音频 $soundId：元数据不存在")
+                            Logger.w(TAG, "无法恢复远程音频 $soundId：元数据不存在")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "恢复远程播放 $soundId 失败: ${e.message}")
+                        Logger.e(TAG, "恢复远程播放 $soundId 失败: ${e.message}")
                     }
                 }
                 

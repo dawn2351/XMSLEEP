@@ -22,7 +22,7 @@ object NotificationHelper {
     private const val CHANNEL_NAME = "音乐播放"
     private const val CHANNEL_DESCRIPTION = "显示正在播放的音乐和控制按钮"
     
-    const val NOTIFICATION_ID = 1001
+    const val NOTIFICATION_ID = 1001  // 音乐播放通知
     
     // 通知动作
     const val ACTION_PLAY_PAUSE = "org.xmsleep.app.ACTION_PLAY_PAUSE"

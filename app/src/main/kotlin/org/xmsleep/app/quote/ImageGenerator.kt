@@ -5,12 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
-import android.graphics.RectF
 import android.graphics.Typeface
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.core.content.res.ResourcesCompat
 import org.xmsleep.app.R
+import org.xmsleep.app.utils.Logger
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -23,192 +20,156 @@ object ImageGenerator {
     
     /**
      * 生成名句分享图片
-     * 使用原生 Canvas 绘制，不依赖 Compose
+     * 纵向布局，背景图填满整个图片，文字和二维码覆盖在上面
      */
     fun generateQuoteImage(
         context: Context,
         quote: Quote,
         isDarkTheme: Boolean = false
     ): Bitmap {
-        android.util.Log.d("ImageGenerator", "开始生成图片，isDarkTheme=$isDarkTheme")
+        Logger.d("ImageGenerator", "开始生成图片（覆盖式布局）")
         
         // 图片尺寸
         val width = 1080
-        val padding = 80f
-        
-        // 颜色方案
-        val backgroundColor = if (isDarkTheme) Color(0xFF1C1B1F) else Color(0xFFFFFBFE)
-        val surfaceColor = if (isDarkTheme) Color(0xFF1C1B1F) else Color(0xFFFFFBFE)
-        val primaryColor = if (isDarkTheme) Color(0xFFD0BCFF) else Color(0xFF6750A4)
-        val onSurfaceColor = if (isDarkTheme) Color(0xFFE6E1E5) else Color(0xFF1C1B1F)
-        val onSurfaceVariantColor = if (isDarkTheme) Color(0xFFCAC4D0) else Color(0xFF49454F)
-        val surfaceVariantColor = if (isDarkTheme) Color(0xFF49454F) else Color(0xFFE7E0EC)
-        
-        // 创建 Paint 对象
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onSurfaceColor.toArgb()
-            textAlign = Paint.Align.LEFT
-        }
-        
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = primaryColor.toArgb()
-            textSize = 48f
-            textAlign = Paint.Align.LEFT
-        }
-        
-        val quotePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onSurfaceColor.toArgb()
-            textSize = 90f
-            textAlign = Paint.Align.LEFT
-        }
-        
-        val authorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onSurfaceVariantColor.toArgb()
-            textSize = 42f
-            textAlign = Paint.Align.RIGHT
-        }
-        
-        val smallTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onSurfaceVariantColor.toArgb()
-            textSize = 36f
-            textAlign = Paint.Align.RIGHT
-        }
-        
-        val appNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onSurfaceColor.toArgb()
-            textSize = 52f
-            textAlign = Paint.Align.LEFT
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        }
-        
-        val appDescPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = onSurfaceVariantColor.toArgb()
-            textSize = 38f
-            textAlign = Paint.Align.LEFT
-        }
-        
-        // 计算所需高度
-        var currentY = padding
-        
-        // 日期高度
-        currentY += 60f
-        currentY += 48f // spacing
-        
-        // 名句高度（多行文本）
-        val quoteLines = wrapText(quote.text, quotePaint, width - padding * 2)
-        currentY += quoteLines.size * 120f
-        currentY += 32f // spacing
-        
-        // 作者高度（作者和来源在同一行，不需要额外高度）
-        currentY += 50f
-        
-        currentY += 80f // spacing
-        
-        // 底部区域高度（应用名称 + 二维码）
-        currentY += 200f
-        
-        currentY += padding
-        
-        val height = currentY.toInt()
-        
-        android.util.Log.d("ImageGenerator", "计算高度: $height")
+        val height = 1500
+        val padding = 60f
         
         // 创建 Bitmap
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         
-        // 绘制背景
-        canvas.drawColor(backgroundColor.toArgb())
-        
-        // 绘制卡片背景
-        val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = surfaceColor.toArgb()
+        // 绘制背景图（CenterCrop 方式）
+        try {
+            val backgroundBitmap = android.graphics.BitmapFactory.decodeResource(
+                context.resources,
+                R.drawable.bg
+            )
+            if (backgroundBitmap != null) {
+                val scaledBitmap = Bitmap.createScaledBitmap(backgroundBitmap, width, height, true)
+                canvas.drawBitmap(scaledBitmap, 0f, 0f, null)
+                scaledBitmap.recycle()
+                backgroundBitmap.recycle()
+            } else {
+                canvas.drawColor(android.graphics.Color.parseColor("#1C1B1F"))
+            }
+        } catch (e: Exception) {
+            Logger.e("ImageGenerator", "绘制背景图失败", e)
+            canvas.drawColor(android.graphics.Color.parseColor("#1C1B1F"))
         }
-        val cardRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
-        canvas.drawRoundRect(cardRect, 32f, 32f, cardPaint)
         
-        // 开始绘制内容
-        var y = padding + 60f
+        // 创建 Paint 对象（白色文字，带阴影增加可读性）
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textSize = 42f
+            textAlign = Paint.Align.LEFT
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            setShadowLayer(6f, 0f, 2f, android.graphics.Color.argb(200, 0, 0, 0))
+        }
         
-        // 绘制日期（左对齐）
+        val quotePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textSize = 68f
+            textAlign = Paint.Align.LEFT
+            setShadowLayer(8f, 0f, 3f, android.graphics.Color.argb(200, 0, 0, 0))
+        }
+        
+        val authorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textSize = 36f
+            textAlign = Paint.Align.RIGHT
+            setShadowLayer(6f, 0f, 2f, android.graphics.Color.argb(200, 0, 0, 0))
+        }
+        
+        // 开始绘制文字
+        var y = padding + 120f
+        
+        // 绘制日期
         val dateText = LocalDate.now().format(
             DateTimeFormatter.ofPattern("yyyy年MM月dd日 EEEE", Locale.CHINA)
         )
         canvas.drawText(dateText, padding, y, titlePaint)
-        y += 48f
+        y += 60f
         
-        // 绘制名句（多行，左对齐）
+        // 绘制名句（多行）
+        val quoteLines = wrapText(quote.text, quotePaint, width - padding * 2)
         for (line in quoteLines) {
-            y += 120f
+            y += 95f
             canvas.drawText(line, padding, y, quotePaint)
         }
-        y += 32f
-        
-        // 绘制作者（右对齐）
         y += 50f
-        val authorY = y
-        canvas.drawText("— ${quote.author}", width - padding, authorY, authorPaint)
         
-        // 绘制来源（右对齐，同一水平线）
+        // 绘制作者
+        canvas.drawText("— ${quote.author}", width - padding, y, authorPaint)
+        
+        // 绘制来源
         if (quote.from != null) {
-            // 计算作者文字的宽度，让书名显示在作者左边
             val authorText = "— ${quote.author}"
             val authorWidth = authorPaint.measureText(authorText)
             val fromText = "《${quote.from}》  "
-            val fromX = width - padding - authorWidth - 24f // 24f 是间距
-            
-            // 使用左对齐绘制书名
             val fromPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = onSurfaceVariantColor.toArgb()
-                textSize = 36f
+                color = android.graphics.Color.WHITE
+                textSize = 30f
                 textAlign = Paint.Align.RIGHT
+                setShadowLayer(6f, 0f, 2f, android.graphics.Color.argb(200, 0, 0, 0))
             }
-            canvas.drawText(fromText, fromX, authorY, fromPaint)
+            canvas.drawText(fromText, width - padding - authorWidth - 20f, y, fromPaint)
         }
         
-        y += 80f
-        
-        // 底部区域：左边文字，右边二维码
-        val qrSize = 200f
+        // 底部信息
+        val qrSize = 150f
+        val qrBottom = height - padding - 60f
         val qrRight = width - padding
+        val qrTop = qrBottom - qrSize
         val qrLeft = qrRight - qrSize
-        val bottomY = y + 200f // 底部基线
         
-        // 绘制二维码（右侧，底部对齐）
-        val qrTop = bottomY - qrSize
+        // 绘制二维码白色背景
         val qrWhiteBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.WHITE
         }
-        val qrWhiteBgRect = RectF(qrLeft, qrTop, qrRight, bottomY)
-        canvas.drawRoundRect(qrWhiteBgRect, 16f, 16f, qrWhiteBgPaint)
+        canvas.drawRect(qrLeft - 8f, qrTop - 8f, qrRight + 8f, qrBottom + 8f, qrWhiteBgPaint)
         
-        // 绘制二维码图片
+        // 绘制二维码
         try {
             val qrBitmap = android.graphics.BitmapFactory.decodeResource(
                 context.resources,
                 R.drawable.download_qr_code
             )
-            val qrRect = Rect(
-                (qrLeft + 12f).toInt(),
-                (qrTop + 12f).toInt(),
-                (qrRight - 12f).toInt(),
-                (bottomY - 12f).toInt()
-            )
-            canvas.drawBitmap(qrBitmap, null, qrRect, null)
+            if (qrBitmap != null) {
+                val srcRect = android.graphics.Rect(0, 0, qrBitmap.width, qrBitmap.height)
+                val dstRect = android.graphics.Rect(
+                    qrLeft.toInt(), 
+                    qrTop.toInt(), 
+                    qrRight.toInt(), 
+                    qrBottom.toInt()
+                )
+                canvas.drawBitmap(qrBitmap, srcRect, dstRect, null)
+                qrBitmap.recycle()
+            }
         } catch (e: Exception) {
-            android.util.Log.e("ImageGenerator", "绘制二维码失败", e)
+            Logger.e("ImageGenerator", "绘制二维码失败", e)
         }
         
-        // 绘制左侧文字（底部对齐）
-        // 先绘制下面的"白噪音助眠应用"
-        val descY = bottomY
-        canvas.drawText("白噪音助眠应用", padding, descY, appDescPaint)
+        // 绘制左侧应用信息
+        val appNamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textSize = 42f
+            textAlign = Paint.Align.LEFT
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            setShadowLayer(6f, 0f, 2f, android.graphics.Color.argb(200, 0, 0, 0))
+        }
         
-        // 再绘制上面的"XMSLEEP"
-        val appNameY = descY - 60f // 向上偏移
+        val appDescPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.WHITE
+            textSize = 34f
+            textAlign = Paint.Align.LEFT
+            setShadowLayer(6f, 0f, 2f, android.graphics.Color.argb(200, 0, 0, 0))
+        }
+        
+        val appNameY = qrTop - 20f
         canvas.drawText("XMSLEEP", padding, appNameY, appNamePaint)
+        canvas.drawText("白噪音助眠应用", padding, appNameY + 48f, appDescPaint)
         
-        android.util.Log.d("ImageGenerator", "图片生成完成: ${bitmap.width}x${bitmap.height}")
+        Logger.d("ImageGenerator", "图片生成完成: ${bitmap.width}x${bitmap.height}")
         return bitmap
     }
     

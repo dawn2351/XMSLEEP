@@ -16,6 +16,7 @@ dependencyResolutionManagement {
     repositories {
         maven { url = uri("https://maven.aliyun.com/repository/public") }
         maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://jitpack.io") } // 添加 JitPack 仓库
         mavenCentral()
         google()
     }

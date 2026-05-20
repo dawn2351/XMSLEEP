@@ -112,8 +112,9 @@ fun ToastContent(
                 ),
             )
 
+            // 居中显示：水平和垂直都居中
             val x = max(this@BoxWithConstraints.constraints.maxWidth - placeable.width, 0) / 2
-            val y = constraints.maxHeight - placeable.height - px100dp
+            val y = max(constraints.maxHeight - placeable.height, 0) / 2
 
             layout(placeable.width, placeable.height) {
                 placeable.place(x, y, 100f)
@@ -142,8 +143,10 @@ fun ToastContent(
  */
 object ToastUtils {
     fun showToast(context: Context, message: String, duration: Int = android.widget.Toast.LENGTH_SHORT) {
-        // 使用原生 Toast 作为后备方案（在非 Compose 环境使用）
-        android.widget.Toast.makeText(context, message, duration).show()
+        // 使用原生 Toast，设置为居中显示
+        val toast = android.widget.Toast.makeText(context, message, duration)
+        toast.setGravity(android.view.Gravity.CENTER, 0, 0) // 居中显示
+        toast.show()
     }
 }
 

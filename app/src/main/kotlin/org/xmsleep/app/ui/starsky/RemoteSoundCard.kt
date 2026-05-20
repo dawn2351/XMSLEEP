@@ -43,54 +43,35 @@ fun RemoteSoundCard(
     isDownloadingButNoProgress: Boolean = false,
     columnsCount: Int = 2,
     isPinned: Boolean = false,
-    isFavorite: Boolean = false,
     onPinnedChange: (Boolean) -> Unit = {},
-    onFavoriteChange: (Boolean) -> Unit = {},
     onCardClick: () -> Unit,
     onVolumeClick: () -> Unit,
     cardHeight: Dp? = null,
     isEditMode: Boolean = false,
-    onRemove: () -> Unit = {}
+    onRemove: () -> Unit = {},
+    isInPresetDialog: Boolean = false, // 新增参数：是否在预设弹窗中
 ) {
     val context = LocalContext.current
     val cacheManager = remember { 
         org.xmsleep.app.audio.AudioCacheManager.getInstance(context) 
     }
-    var isCached by remember(sound.id) { 
-        mutableStateOf(cacheManager.getCachedFile(sound.id) != null) 
+    var isCached by remember(sound.id) {
+        mutableStateOf(cacheManager.getCachedFile(sound.id) != null)
     }
-    
-    // 监听下载完成，更新缓存状态
-    LaunchedEffect(downloadProgress, sound.id, isPlaying) {
-        val cached = cacheManager.getCachedFile(sound.id) != null
-        if (cached != isCached) {
-            isCached = cached
-        }
-        
-        if (downloadProgress != null && downloadProgress >= 1.0f) {
-            delay(300)
+
+    // 统一的缓存状态同步：监听下载进度变化
+    LaunchedEffect(downloadProgress, sound.id) {
+        // 单卡下载完成后检查
+        if (downloadProgress == null || downloadProgress >= 1.0f) {
+            delay(200)
             val newCached = cacheManager.getCachedFile(sound.id) != null
             if (newCached != isCached) {
                 isCached = newCached
             }
         }
-        
-        if (downloadProgress == null) {
-            delay(300)
-            val newCached = cacheManager.getCachedFile(sound.id) != null
-            if (newCached != isCached) {
-                isCached = newCached
-            }
-        }
-        
-        if (isPlaying) {
-            val playingCached = cacheManager.getCachedFile(sound.id) != null
-            if (playingCached != isCached) {
-                isCached = playingCached
-            }
-        }
     }
-    
+
+    // 初始渲染时再次确认缓存状态
     LaunchedEffect(Unit) {
         delay(100)
         val cached = cacheManager.getCachedFile(sound.id) != null
@@ -104,10 +85,20 @@ fun RemoteSoundCard(
         label = "alpha"
     )
     
-    val cardBackgroundColor = if (isCached) {
-        MaterialTheme.colorScheme.surfaceContainerHigh // 已下载使用较深的背景色，与未下载角标颜色一致
+    val cardBackgroundColor = if (isInPresetDialog) {
+        // 预设弹窗中：使用完全不透明的背景色，适配主题
+        if (isCached) {
+            MaterialTheme.colorScheme.surfaceContainer // 已下载使用较深的背景色
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow // 未下载使用较浅的背景色
+        }
     } else {
-        MaterialTheme.colorScheme.surfaceVariant // 未下载使用正常背景色
+        // 繁星页面中：使用半透明背景色
+        if (isCached) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f) // 已下载使用较深的背景色
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // 未下载使用正常背景色
+        }
     }
     
     var showTitleMenu by remember { mutableStateOf(false) }
@@ -230,103 +221,9 @@ fun RemoteSoundCard(
                                     }
                                 }
                             )
-                            
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isFavorite) {
-                                                Icons.Default.Star
-                                            } else {
-                                                Icons.Default.StarOutline
-                                            },
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = if (isFavorite) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
-                                        )
-                                        Text(
-                                            text = if (isFavorite) {
-                                                context.getString(R.string.cancel_favorite)
-                                            } else {
-                                                context.getString(R.string.favorite)
-                                            },
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isFavorite) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            }
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    val newFavoriteState = !isFavorite
-                                    onFavoriteChange(newFavoriteState)
-                                    showTitleMenu = false
-                                    val toastMessage = if (newFavoriteState) {
-                                        context.getString(R.string.favorited_success)
-                                    } else {
-                                        context.getString(R.string.unfavorited_success)
-                                    }
-                                    ToastUtils.showToast(context, toastMessage)
-                                }
-                            )
-                            
-                            if (isCached) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                            Text(
-                                                text = context.getString(R.string.delete_cache),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        scope.launch {
-                                            try {
-                                                cacheManager.deleteCache(sound.id)
-                                                val cachedFile = cacheManager.getCachedFile(sound.id)
-                                                if (cachedFile == null) {
-                                                    isCached = false
-                                                    Toast.makeText(
-                                                        context,
-                                                        context.getString(R.string.cache_cleared_success),
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            } catch (e: Exception) {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.cache_clear_failed, e.message ?: ""),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                            showTitleMenu = false
-                                        }
-                                    }
-                                )
-                            }
                         }
                     }
-                }
+            }
                 
                 // 音频可视化器
                 if (isPlaying) {

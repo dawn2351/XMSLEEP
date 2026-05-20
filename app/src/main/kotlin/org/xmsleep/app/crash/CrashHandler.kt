@@ -3,7 +3,7 @@ package org.xmsleep.app.crash
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import org.xmsleep.app.MainActivity
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -41,7 +41,7 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
         try {
             // 记录异常信息
-            Log.e(TAG, "Uncaught exception in thread ${thread.name}", throwable)
+            Logger.e(TAG, "Uncaught exception in thread ${thread.name}", throwable)
             
             // 获取异常信息
             val errorMessage = throwable.message ?: throwable::class.java.simpleName
@@ -63,7 +63,7 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
             kotlin.system.exitProcess(1)
             
         } catch (e: Exception) {
-            Log.e(TAG, "Error in crash handler", e)
+            Logger.e(TAG, "Error in crash handler", e)
             // 如果崩溃处理失败，使用默认处理器
             defaultHandler?.uncaughtException(thread, throwable)
         }
@@ -101,10 +101,10 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
                 ===============================
             """.trimIndent()
             
-            Log.e(TAG, crashLog)
+            Logger.e(TAG, crashLog)
             
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to save crash log", e)
+            Logger.e(TAG, "Failed to save crash log", e)
         }
     }
     

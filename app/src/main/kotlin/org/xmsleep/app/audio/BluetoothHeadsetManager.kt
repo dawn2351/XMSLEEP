@@ -10,7 +10,7 @@ import android.content.IntentFilter
 import android.media.AudioDeviceInfo
 import android.media.AudioManager as SystemAudioManager
 import android.os.Build
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 
 /**
  * 蓝牙耳机管理器
@@ -47,11 +47,11 @@ class BluetoothHeadsetManager private constructor() {
                     
                     when (state) {
                         BluetoothProfile.STATE_DISCONNECTED -> {
-                            Log.d(TAG, "蓝牙耳机已断开")
+                            Logger.d(TAG, "蓝牙耳机已断开")
                             onHeadsetDisconnected?.invoke()
                         }
                         BluetoothProfile.STATE_CONNECTED -> {
-                            Log.d(TAG, "蓝牙耳机已连接")
+                            Logger.d(TAG, "蓝牙耳机已连接")
                         }
                     }
                 }
@@ -59,7 +59,7 @@ class BluetoothHeadsetManager private constructor() {
                 // 监听音频输出设备变化（更通用的方式）
                 SystemAudioManager.ACTION_AUDIO_BECOMING_NOISY -> {
                     // 当音频输出设备断开时（包括蓝牙耳机、有线耳机等）
-                    Log.d(TAG, "音频输出设备已断开（ACTION_AUDIO_BECOMING_NOISY）")
+                    Logger.d(TAG, "音频输出设备已断开（ACTION_AUDIO_BECOMING_NOISY）")
                     onHeadsetDisconnected?.invoke()
                 }
             }
@@ -83,7 +83,7 @@ class BluetoothHeadsetManager private constructor() {
      */
     private fun registerReceiver() {
         if (isReceiverRegistered) {
-            Log.d(TAG, "广播接收器已注册，跳过")
+            Logger.d(TAG, "广播接收器已注册，跳过")
             return
         }
         
@@ -97,9 +97,9 @@ class BluetoothHeadsetManager private constructor() {
             
             context?.registerReceiver(bluetoothReceiver, filter)
             isReceiverRegistered = true
-            Log.d(TAG, "蓝牙耳机监听器已注册")
+            Logger.d(TAG, "蓝牙耳机监听器已注册")
         } catch (e: Exception) {
-            Log.e(TAG, "注册广播接收器失败: ${e.message}")
+            Logger.e(TAG, "注册广播接收器失败: ${e.message}")
         }
     }
     
@@ -114,9 +114,9 @@ class BluetoothHeadsetManager private constructor() {
         try {
             context?.unregisterReceiver(bluetoothReceiver)
             isReceiverRegistered = false
-            Log.d(TAG, "蓝牙耳机监听器已注销")
+            Logger.d(TAG, "蓝牙耳机监听器已注销")
         } catch (e: Exception) {
-            Log.e(TAG, "注销广播接收器失败: ${e.message}")
+            Logger.e(TAG, "注销广播接收器失败: ${e.message}")
         }
     }
     
@@ -140,7 +140,7 @@ class BluetoothHeadsetManager private constructor() {
                 bluetoothAdapter.getProfileConnectionState(BluetoothProfile.HEADSET) == BluetoothProfile.STATE_CONNECTED
             }
         } catch (e: Exception) {
-            Log.e(TAG, "检查蓝牙耳机连接状态失败: ${e.message}")
+            Logger.e(TAG, "检查蓝牙耳机连接状态失败: ${e.message}")
             false
         }
     }

@@ -1,7 +1,7 @@
 package org.xmsleep.app.timer
 
 import android.content.Context
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.TimeUnit
 
 /**
@@ -40,8 +41,8 @@ class TimerManager private constructor() {
     private var _timeLeftMillis = MutableStateFlow(0L)
     val timeLeftMillis: StateFlow<Long> = _timeLeftMillis.asStateFlow()
 
-    // 倒计时监听器列表（线程安全）
-    private val listeners = mutableSetOf<TimerListener>()
+    // 倒计时监听器列表（线程安全，使用 CopyOnWriteArraySet 避免并发修改问题）
+    private val listeners = CopyOnWriteArraySet<TimerListener>()
 
     /**
      * 倒计时监听器接口
@@ -106,9 +107,9 @@ class TimerManager private constructor() {
                 listener.onTimerTick(timeLeftMillis)
             }
 
-            Log.d(TAG, "倒计时已开始: $durationMinutes 分钟")
+            Logger.d(TAG, "倒计时已开始: $durationMinutes 分钟")
         } catch (e: Exception) {
-            Log.e(TAG, "启动倒计时失败: ${e.message}")
+            Logger.e(TAG, "启动倒计时失败: ${e.message}")
             // 出现异常时，确保重置倒计时状态
             resetTimerState()
         }
@@ -135,9 +136,9 @@ class TimerManager private constructor() {
                 }
             }
 
-            Log.d(TAG, "倒计时已取消，通知监听器: $notifyListeners")
+            Logger.d(TAG, "倒计时已取消，通知监听器: $notifyListeners")
         } catch (e: Exception) {
-            Log.e(TAG, "取消倒计时失败: ${e.message}")
+            Logger.e(TAG, "取消倒计时失败: ${e.message}")
         }
     }
     
@@ -153,7 +154,7 @@ class TimerManager private constructor() {
         pausedTimeLeft = timerEndTime - System.currentTimeMillis()
         if (pausedTimeLeft < 0) pausedTimeLeft = 0
         
-        Log.d(TAG, "倒计时已暂停，剩余时间: ${pausedTimeLeft}ms")
+        Logger.d(TAG, "倒计时已暂停，剩余时间: ${pausedTimeLeft}ms")
     }
     
     /**
@@ -173,7 +174,7 @@ class TimerManager private constructor() {
             startTimerLoop()
         }
         
-        Log.d(TAG, "倒计时已恢复，剩余时间: ${pausedTimeLeft}ms")
+        Logger.d(TAG, "倒计时已恢复，剩余时间: ${pausedTimeLeft}ms")
     }
 
     /**
@@ -248,12 +249,12 @@ class TimerManager private constructor() {
                     try {
                         listener.onTimerFinished()
                     } catch (e: Exception) {
-                        Log.e(TAG, "通知监听器倒计时结束失败: ${e.message}", e)
+                        Logger.e(TAG, "通知监听器倒计时结束失败: ${e.message}", e)
                     }
                 }
-                Log.d(TAG, "倒计时结束，已通知 ${listenersSnapshot.size} 个监听器")
+                Logger.d(TAG, "倒计时结束，已通知 ${listenersSnapshot.size} 个监听器")
             } catch (e: Exception) {
-                Log.e(TAG, "完成倒计时时发生错误: ${e.message}", e)
+                Logger.e(TAG, "完成倒计时时发生错误: ${e.message}", e)
             }
         }
     }
@@ -277,9 +278,9 @@ class TimerManager private constructor() {
         try {
             cancelTimer(notifyListeners = false)
             listeners.clear()
-            Log.d(TAG, "TimerManager资源已释放")
+            Logger.d(TAG, "TimerManager资源已释放")
         } catch (e: Exception) {
-            Log.e(TAG, "释放TimerManager资源失败: ${e.message}")
+            Logger.e(TAG, "释放TimerManager资源失败: ${e.message}")
         }
     }
 

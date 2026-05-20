@@ -97,6 +97,9 @@ Desktop.ini
 # Local configuration with sensitive data
 gradle.properties.local
 
+# WorkBuddy plugin data
+.workbuddy/
+
 # 备份文件
 *.backup
 *.tmp

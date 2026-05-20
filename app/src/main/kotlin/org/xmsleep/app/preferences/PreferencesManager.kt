@@ -1,54 +1,58 @@
 package org.xmsleep.app.preferences
 
 import android.content.Context
+import android.util.Base64
 import androidx.compose.ui.graphics.Color
+import org.xmsleep.app.Constants
 import org.xmsleep.app.theme.DarkModeOption
+import org.xmsleep.app.utils.Logger
 
 /**
  * 应用偏好设置管理器
  */
 object PreferencesManager {
-    private const val PREFS_NAME = "app_prefs"
-    private const val KEY_DARK_MODE = "dark_mode"
-    private const val KEY_SELECTED_COLOR = "selected_color"
-    private const val KEY_USE_DYNAMIC_COLOR = "use_dynamic_color"
-    private const val KEY_USE_BLACK_BACKGROUND = "use_black_background"
-    private const val KEY_HIDE_ANIMATION = "hide_animation"
-    private const val KEY_SOUND_CARDS_COLUMNS_COUNT = "sound_cards_columns_count"
-    private const val KEY_STAR_SKY_COLUMNS_COUNT = "star_sky_columns_count"
-    private const val KEY_QUICK_PLAY_EXPANDED = "quick_play_expanded"
-    private const val KEY_NOW_PLAYING_EXPANDED = "now_playing_expanded"
-    private const val KEY_REMOTE_FAVORITES = "remote_favorites"
-    private const val KEY_REMOTE_PINNED = "remote_pinned"
-    private const val KEY_MIGRATION_DONE = "migration_done"
-    private const val KEY_FLOATING_BUTTON_X = "floating_button_x"
-    private const val KEY_FLOATING_BUTTON_Y = "floating_button_y"
-    private const val KEY_FLOATING_BUTTON_IS_LEFT = "floating_button_is_left"
-    private const val KEY_FLOATING_BUTTON_EXPANDED = "floating_button_expanded"
+    private val PREFS_NAME = Constants.PrefsKeys.PREFS_NAME
     
-    // 3个预设的本地声音固定列表
-    private const val KEY_PRESET1_LOCAL_PINNED = "preset1_local_pinned"
-    private const val KEY_PRESET2_LOCAL_PINNED = "preset2_local_pinned"
-    private const val KEY_PRESET3_LOCAL_PINNED = "preset3_local_pinned"
-    // 3个预设的远程声音固定列表
-    private const val KEY_PRESET1_REMOTE_PINNED = "preset1_remote_pinned"
-    private const val KEY_PRESET2_REMOTE_PINNED = "preset2_remote_pinned"
-    private const val KEY_PRESET3_REMOTE_PINNED = "preset3_remote_pinned"
-    // 当前激活的预设
-    private const val KEY_ACTIVE_PRESET = "active_preset"
-    // 本地音频收藏列表
-    private const val KEY_LOCAL_AUDIO_FAVORITES = "local_audio_favorites"
-    // 最近播放的声音列表（本地声音）
-    private const val KEY_RECENT_LOCAL_SOUNDS = "recent_local_sounds"
-    // 最近播放的声音列表（远程声音）
-    private const val KEY_RECENT_REMOTE_SOUNDS = "recent_remote_sounds"
-    // 最近播放的本地音频文件列表
-    private const val KEY_RECENT_LOCAL_AUDIO_FILES = "recent_local_audio_files"
-    // 音量设置前缀
-    private const val KEY_VOLUME_PREFIX = "volume_"
+    private val KEY_DARK_MODE = Constants.PrefsKeys.DARK_MODE
+    private val KEY_SELECTED_COLOR = Constants.PrefsKeys.SELECTED_COLOR
+    private val KEY_USE_DYNAMIC_COLOR = Constants.PrefsKeys.USE_DYNAMIC_COLOR
+    private val KEY_USE_BLACK_BACKGROUND = Constants.PrefsKeys.USE_BLACK_BACKGROUND
+    private val KEY_HIDE_ANIMATION = Constants.PrefsKeys.HIDE_ANIMATION
+    private val KEY_SOUND_CARDS_COLUMNS_COUNT = Constants.PrefsKeys.SOUND_CARDS_COLUMNS
+    private val KEY_STAR_SKY_COLUMNS_COUNT = Constants.PrefsKeys.STAR_SKY_COLUMNS_COUNT
+    private val KEY_QUICK_PLAY_EXPANDED = Constants.PrefsKeys.QUICK_PLAY_EXPANDED
+    private val KEY_NOW_PLAYING_EXPANDED = Constants.PrefsKeys.NOW_PLAYING_EXPANDED
+    private val KEY_REMOTE_FAVORITES = Constants.PrefsKeys.REMOTE_FAVORITES
+    private val KEY_REMOTE_PINNED = Constants.PrefsKeys.REMOTE_PINNED
+    private val KEY_MIGRATION_DONE = Constants.PrefsKeys.MIGRATION_DONE
+    private val KEY_FLOATING_BUTTON_X = Constants.PrefsKeys.FLOATING_BUTTON_X
+    private val KEY_FLOATING_BUTTON_Y = Constants.PrefsKeys.FLOATING_BUTTON_Y
+    private val KEY_FLOATING_BUTTON_IS_LEFT = Constants.PrefsKeys.FLOATING_BUTTON_IS_LEFT
+    private val KEY_FLOATING_BUTTON_EXPANDED = Constants.PrefsKeys.FLOATING_BUTTON_EXPANDED
+    
+    private val KEY_PRESET1_LOCAL_PINNED = Constants.PrefsKeys.PRESET1_LOCAL_PINNED
+    private val KEY_PRESET2_LOCAL_PINNED = Constants.PrefsKeys.PRESET2_LOCAL_PINNED
+    private val KEY_PRESET3_LOCAL_PINNED = Constants.PrefsKeys.PRESET3_LOCAL_PINNED
+    private val KEY_PRESET1_REMOTE_PINNED = Constants.PrefsKeys.PRESET1_REMOTE_PINNED
+    private val KEY_PRESET2_REMOTE_PINNED = Constants.PrefsKeys.PRESET2_REMOTE_PINNED
+    private val KEY_PRESET3_REMOTE_PINNED = Constants.PrefsKeys.PRESET3_REMOTE_PINNED
+    private val KEY_ACTIVE_PRESET = Constants.PrefsKeys.ACTIVE_PRESET
+    private val KEY_LOCAL_AUDIO_FAVORITES = Constants.PrefsKeys.LOCAL_AUDIO_FAVORITES
+    private val KEY_RECENT_LOCAL_SOUNDS = Constants.PrefsKeys.RECENT_LOCAL_SOUNDS
+    private val KEY_RECENT_REMOTE_SOUNDS = Constants.PrefsKeys.RECENT_REMOTE_SOUNDS
+    private val KEY_RECENT_LOCAL_AUDIO_FILES = Constants.PrefsKeys.RECENT_LOCAL_AUDIO_FILES
+    private val KEY_VOLUME_PREFIX = Constants.PrefsKeys.VOLUME_PREFIX
+    private val KEY_BACKGROUND_SELECTION = Constants.PrefsKeys.BACKGROUND_SELECTION
+    private val KEY_AUTO_COUNTDOWN_MINUTES = Constants.PrefsKeys.AUTO_COUNTDOWN_MINUTES
+    private val KEY_KEEP_SCREEN_ON = Constants.PrefsKeys.KEEP_SCREEN_ON
+    private val KEY_SHOW_RECENT_PLAY_DIALOG = Constants.PrefsKeys.SHOW_RECENT_PLAY_DIALOG
+    private val KEY_AUTO_PLAY_ON_START = Constants.PrefsKeys.AUTO_PLAY_ON_START
+    private val KEY_QUOTE_WIDGET_ADDED = Constants.PrefsKeys.QUOTE_WIDGET_ADDED
     
     /**
      * 从旧版本迁移数据（如果存在）
+     * 注意：由于包名从未变更（OLD_APP_PACKAGE == APP_PACKAGE），此迁移逻辑实际上是死代码。
+     * 保留方法签名以兼容现有调用点，但直接标记迁移完成跳过无效的 createPackageContext 调用。
      */
     fun migrateFromOldVersion(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -58,60 +62,10 @@ object PreferencesManager {
             return
         }
         
-        try {
-            // 尝试创建旧版本的Context来访问其SharedPreferences
-            val oldContext = context.createPackageContext(
-                "org.streambox.app",
-                Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY
-            )
-            
-            val oldPrefs = oldContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            
-            // 迁移数据
-            val editor = prefs.edit()
-            
-            // 迁移深色模式
-            val darkMode = oldPrefs.getString(KEY_DARK_MODE, null)
-            if (darkMode != null) {
-                editor.putString(KEY_DARK_MODE, darkMode)
-            }
-            
-            // 迁移主题色
-            val selectedColor = oldPrefs.getLong(KEY_SELECTED_COLOR, -1L)
-            if (selectedColor != -1L) {
-                editor.putLong(KEY_SELECTED_COLOR, selectedColor)
-            }
-            
-            // 迁移动态颜色
-            if (oldPrefs.contains(KEY_USE_DYNAMIC_COLOR)) {
-                editor.putBoolean(KEY_USE_DYNAMIC_COLOR, oldPrefs.getBoolean(KEY_USE_DYNAMIC_COLOR, false))
-            }
-            
-            // 迁移纯黑背景
-            if (oldPrefs.contains(KEY_USE_BLACK_BACKGROUND)) {
-                editor.putBoolean(KEY_USE_BLACK_BACKGROUND, oldPrefs.getBoolean(KEY_USE_BLACK_BACKGROUND, false))
-            }
-            
-            // 迁移隐藏动画
-            if (oldPrefs.contains(KEY_HIDE_ANIMATION)) {
-                editor.putBoolean(KEY_HIDE_ANIMATION, oldPrefs.getBoolean(KEY_HIDE_ANIMATION, true))
-            }
-            
-            // 迁移声音卡片列数
-            if (oldPrefs.contains(KEY_SOUND_CARDS_COLUMNS_COUNT)) {
-                editor.putInt(KEY_SOUND_CARDS_COLUMNS_COUNT, oldPrefs.getInt(KEY_SOUND_CARDS_COLUMNS_COUNT, 2))
-            }
-            
-            // 标记迁移完成
-            editor.putBoolean(KEY_MIGRATION_DONE, true)
-            editor.apply()
-            
-            android.util.Log.d("PreferencesManager", "成功从旧版本迁移数据")
-        } catch (e: Exception) {
-            // 如果无法访问旧版本（比如旧版本已卸载），标记迁移完成，避免重复尝试
-            prefs.edit().putBoolean(KEY_MIGRATION_DONE, true).apply()
-            android.util.Log.d("PreferencesManager", "无法访问旧版本数据（可能已卸载）: ${e.message}")
-        }
+        // OLD_APP_PACKAGE 与 APP_PACKAGE 相同，createPackageContext 无法读取自身历史数据，
+        // 直接标记迁移完成，避免每次冷启动都触发一次必然失败的跨包 Context 创建。
+        prefs.edit().putBoolean(KEY_MIGRATION_DONE, true).apply()
+        Logger.d("PreferencesManager", "包名未变更，跳过旧版本数据迁移")
     }
     
     /**
@@ -125,7 +79,7 @@ object PreferencesManager {
     /**
      * 获取深色模式设置
      */
-    fun getDarkMode(context: Context, default: DarkModeOption = DarkModeOption.AUTO): DarkModeOption {
+    fun getDarkMode(context: Context, default: DarkModeOption = DarkModeOption.DARK): DarkModeOption {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val modeName = prefs.getString(KEY_DARK_MODE, null)
         return if (modeName != null) {
@@ -500,16 +454,20 @@ object PreferencesManager {
     
     /**
      * 保存最近播放的本地音频文件列表（包含 URI 映射）
+     * 使用 Base64 编码 URI 以避免特殊字符导致的解析问题
      */
     fun saveRecentLocalAudioFiles(context: Context, audioUriMap: Map<Long, String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        // 将 Map 转换为 JSON 字符串保存
-        val jsonString = audioUriMap.entries.joinToString(";") { "${it.key}:${it.value}" }
+        val jsonString = audioUriMap.entries.joinToString(";") { entry ->
+            val encodedUri = Base64.encodeToString(entry.value.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            "${entry.key}:$encodedUri"
+        }
         prefs.edit().putString(KEY_RECENT_LOCAL_AUDIO_FILES, jsonString).apply()
     }
     
     /**
      * 获取最近播放的本地音频文件列表（包含 URI 映射）
+     * 使用 Base64 解码 URI
      */
     fun getRecentLocalAudioFiles(context: Context): Map<Long, String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -522,13 +480,14 @@ object PreferencesManager {
                     val parts = entry.split(":", limit = 2)
                     if (parts.size == 2) {
                         val audioId = parts[0].toLongOrNull()
-                        val uri = parts[1]
+                        val encodedUri = parts[1]
+                        val uri = String(Base64.decode(encodedUri, Base64.NO_WRAP), Charsets.UTF_8)
                         if (audioId != null) audioId to uri else null
                     } else null
                 }
                 .toMap()
         } catch (e: Exception) {
-            android.util.Log.e("PreferencesManager", "解析最近播放的本地音频文件失败: ${e.message}")
+            Logger.e("PreferencesManager", "解析最近播放的本地音频文件失败: ${e.message}")
             emptyMap()
         }
     }
@@ -591,6 +550,115 @@ object PreferencesManager {
     fun getLocalAudioVolume(context: Context, audioId: Long, default: Float = 0.5f): Float {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getFloat("${KEY_VOLUME_PREFIX}audio_$audioId", default)
+    }
+    
+    /**
+     * 保存背景动画选择
+     * @param selection 背景选择枚举
+     */
+    fun saveBackgroundSelection(context: Context, selection: org.xmsleep.app.ui.BackgroundSelection) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_BACKGROUND_SELECTION, selection.value).apply()
+    }
+    
+    /**
+     * 获取背景动画选择
+     * @return 背景选择枚举，默认为 None
+     */
+    fun getBackgroundSelection(context: Context): org.xmsleep.app.ui.BackgroundSelection {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val value = prefs.getString(KEY_BACKGROUND_SELECTION, "none") ?: "none"
+        return org.xmsleep.app.ui.BackgroundSelection.fromValue(value)
+    }
+    
+    /**
+     * 保存自动倒计时时间（分钟）
+     * @param minutes 倒计时分钟数，0 表示不设置倒计时
+     */
+    fun saveAutoCountdownMinutes(context: Context, minutes: Int) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(KEY_AUTO_COUNTDOWN_MINUTES, minutes).apply()
+    }
+    
+    /**
+     * 获取自动倒计时时间（分钟）
+     * @return 倒计时分钟数，0 表示不设置倒计时
+     */
+    fun getAutoCountdownMinutes(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getInt(KEY_AUTO_COUNTDOWN_MINUTES, 0)
+    }
+    
+    /**
+     * 保存屏幕常亮设置
+     * @param keepScreenOn 是否保持屏幕常亮
+     */
+    fun saveKeepScreenOn(context: Context, keepScreenOn: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_KEEP_SCREEN_ON, keepScreenOn).apply()
+    }
+    
+    /**
+     * 获取屏幕常亮设置
+     * @return 是否保持屏幕常亮，默认为 true
+     */
+    fun getKeepScreenOn(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_KEEP_SCREEN_ON, true)
+    }
+    
+    /**
+     * 保存是否显示最近播放弹窗设置
+     * @param show 是否显示，默认为 true
+     */
+    fun saveShowRecentPlayDialog(context: Context, show: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_SHOW_RECENT_PLAY_DIALOG, show).apply()
+    }
+    
+    /**
+     * 获取是否显示最近播放弹窗设置
+     * @return 是否显示，默认为 true
+     */
+    fun getShowRecentPlayDialog(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_SHOW_RECENT_PLAY_DIALOG, true)
+    }
+
+    /**
+     * 保存应用启动自动播放设置
+     * @param enabled 是否启用
+     */
+    fun setAutoPlayOnStart(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_AUTO_PLAY_ON_START, enabled).apply()
+    }
+
+    /**
+     * 获取应用启动自动播放设置
+     * @return 是否启用，默认为 false
+     */
+    fun getAutoPlayOnStart(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_AUTO_PLAY_ON_START, false)
+    }
+
+    /**
+     * 保存一言一句小组件是否已添加
+     * @param added 是否已添加
+     */
+    fun saveQuoteWidgetAdded(context: Context, added: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_QUOTE_WIDGET_ADDED, added).apply()
+    }
+    
+    /**
+     * 获取一言一句小组件是否已添加
+     * @return 是否已添加，默认为 false
+     */
+    fun isQuoteWidgetAdded(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_QUOTE_WIDGET_ADDED, false)
     }
 }
 

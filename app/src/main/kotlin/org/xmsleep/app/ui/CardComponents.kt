@@ -36,11 +36,9 @@ fun SimpleSoundCard2Columns(
     item: SoundItem,
     isPlaying: Boolean,
     isPinned: Boolean = false,
-    isFavorite: Boolean = false,
     onToggle: (AudioManager.Sound) -> Unit,
     onVolumeClick: () -> Unit = {},
     onPinnedChange: (Boolean) -> Unit = {},
-    onFavoriteChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -67,7 +65,7 @@ fun SimpleSoundCard2Columns(
                 )
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Box(
@@ -120,39 +118,6 @@ fun SimpleSoundCard2Columns(
                             showTitleMenu = false
                         }
                     )
-                    
-                    // 收藏选项
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Star else Icons.Outlined.StarOutline,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = if (isFavorite) context.getString(R.string.cancel_favorite) else context.getString(R.string.favorite),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        },
-                        onClick = {
-                            val newFavoriteState = !isFavorite
-                            onFavoriteChange(newFavoriteState)
-                            showTitleMenu = false
-                            val toastMessage = if (newFavoriteState) {
-                                context.getString(R.string.favorited_success)
-                            } else {
-                                context.getString(R.string.unfavorited_success)
-                            }
-                            ToastUtils.showToast(context, toastMessage)
-                        }
-                    )
                 }
             }
             
@@ -198,11 +163,9 @@ fun SimpleSoundCard3Columns(
     item: SoundItem,
     isPlaying: Boolean,
     isPinned: Boolean = false,
-    isFavorite: Boolean = false,
     onToggle: (AudioManager.Sound) -> Unit,
     onVolumeClick: () -> Unit = {},
     onPinnedChange: (Boolean) -> Unit = {},
-    onFavoriteChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -229,7 +192,7 @@ fun SimpleSoundCard3Columns(
                 )
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Box(
@@ -285,39 +248,6 @@ fun SimpleSoundCard3Columns(
                                 context.getString(R.string.pinned_success)
                             } else {
                                 context.getString(R.string.unpinned_success)
-                            }
-                            ToastUtils.showToast(context, toastMessage)
-                        }
-                    )
-                    
-                    // 收藏选项
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Star else Icons.Outlined.StarOutline,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = if (isFavorite) context.getString(R.string.cancel_favorite) else context.getString(R.string.favorite),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        },
-                        onClick = {
-                            val newFavoriteState = !isFavorite
-                            onFavoriteChange(newFavoriteState)
-                            showTitleMenu = false
-                            val toastMessage = if (newFavoriteState) {
-                                context.getString(R.string.favorited_success)
-                            } else {
-                                context.getString(R.string.unfavorited_success)
                             }
                             ToastUtils.showToast(context, toastMessage)
                         }
@@ -384,7 +314,7 @@ fun QuickPlayCard(
             .height(80.dp)
             .clickable(enabled = !isEditMode) { onToggle(item.sound) },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Box(

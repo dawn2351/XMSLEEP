@@ -8,11 +8,11 @@
     <string name="language_english">English</string>
     <string name="select_language">Select Language</string>
     <string name="white_noise">White Noise</string>
+    <string name="breathing">Breathing</string>
     <string name="star_sky">Star Sky</string>
     <string name="star_sky_more_sounds_hint">More sounds will appear here</string>
     <string name="settings">Settings</string>
     <string name="theme_and_colors">Theme &amp; Colors</string>
-    <string name="adjust_all_volume">Adjust All Volume</string>
     <string name="clear_cache">Clear Cache</string>
     <string name="software_update">Software Update</string>
     <string name="about_xmsleep">About XMSLEEP</string>
@@ -20,16 +20,17 @@
     <string name="cancel">Cancel</string>
     <string name="color_palette">Color Palette</string>
     <string name="confirm_clear_cache">Are you sure you want to clear all cache data?</string>
-    <string name="appearance">Appearance</string>
+    <string name="appearance">Features</string>
     <string name="system">System</string>
     <string name="other">Other</string>
-    <string name="appearance_mode_theme_color">Appearance Mode, Theme Color</string>
-    <string name="unified_adjust_all_sound_volume">Unified Adjust All Sound Volume</string>
+    <string name="appearance_mode_theme_color">Mode, Theme Color</string>
+    <string name="feature_settings">Feature Settings</string>
+    <string name="feature_settings_description">Customize feature settings</string>
+    <string name="feature_dialog_title">Features</string>
+
     <string name="clear_app_cache_data">Clear App Cache Data</string>
     <string name="check_and_update_to_latest_version">Check and Update to Latest Version</string>
     <string name="view_app_info_version_copyright">View App Info, Version and Copyright</string>
-    <string name="apply_to_all_playing_sounds">Will apply to all playing sounds</string>
-    <string name="volume_set_to">Volume set to %1$d%%</string>
     <string name="clearing">Clearing…</string>
     <string name="this_will_clear_all_cache_data">This will clear all cached data of the app, including images, videos, temporary files, etc.</string>
     <string name="version">Version: %1$s (Build %2$d)</string>
@@ -58,9 +59,23 @@
 
 • Copyright Notice: This app only provides audio playback functions and does not own the copyright of any audio content. All audio content is for personal learning and entertainment only and should not be used for commercial purposes. If you find any audio content that infringes your copyright, please contact us and we will handle it promptly.</string>
     <string name="technical_info_title">Technical Information</string>
-    <string name="copyright">© 2025 XMSLEEP. All rights reserved.\n\nThe audio content provided by this app is for personal learning and entertainment only.\nPlease respect the copyright of related audio resources and do not use them for commercial purposes.</string>
+    <string name="copyright">© XMSLEEP. All rights reserved.\n\nThe audio content provided by this app is for personal learning and entertainment only.\nPlease respect the copyright of related audio resources and do not use them for commercial purposes.</string>
     <string name="hide_animation">Hide WebP Animation</string>
     <string name="hide_lottie_animation_in_sound_cards">Hide WebP animation in sound cards</string>
+    <string name="background_settings">Background Settings</string>
+    <string name="background_animation">Background Animation</string>
+    <string name="select_background">Select Background</string>
+    <string name="no_background">No Background</string>
+    <string name="background_1">Background 1</string>
+    <string name="background_2">Background 2</string>
+    <string name="background_3">Background 3</string>
+    <string name="background_4">Background 4</string>
+    <string name="background_5">Background 5</string>
+    <string name="background_6">Background 6</string>
+    <string name="background_7">Background 7</string>
+    <string name="theme_color">Theme Color</string>
+    <string name="theme_color_disabled_hint">Select \"No Background\" to change theme color</string>
+    <string name="background_preview">Preview Background</string>
     <string name="white_noise_cards">White Noise Cards</string>
     <string name="builtin_sounds_offline_hint">Built-in sounds, no network required</string>
     <string name="selected_count">Selected (%1$d)</string>
@@ -69,6 +84,9 @@
     <string name="cancel_batch_select">Cancel Batch Select</string>
     <string name="default_playback_area">Pinned Sound Area</string>
     <string name="click_play_button_to_play_all">Convenient sound playback</string>
+    <string name="play_preset">Play Preset</string>
+    <string name="pause_preset">Pause Preset</string>
+    <string name="preset">Preset</string>
     <string name="done">Done</string>
     <string name="max_3_sounds_limit">Pinned sound area can only add up to 3 sounds</string>
     <string name="default_area_updated">Pinned sound area updated</string>
@@ -91,12 +109,12 @@
     <string name="adjust_volume_for">Adjust Volume - %1$s</string>
     <string name="cancel_countdown">Cancel Countdown</string>
     <string name="minutes">%1$d minutes</string>
-    <string name="set_as_default">Pin</string>
-    <string name="cancel_default">Unpin</string>
+    <string name="set_as_default">Add to Preset</string>
+    <string name="cancel_default">Remove from Preset</string>
     <string name="favorite">Favorite</string>
     <string name="cancel_favorite">Unfavorite</string>
-    <string name="pinned_success">Pinned</string>
-    <string name="unpinned_success">Unpinned</string>
+    <string name="pinned_success">Added to Preset</string>
+    <string name="unpinned_success">Removed from Preset</string>
     <string name="favorited_success">Favorited</string>
     <string name="unfavorited_success">Unfavorited</string>
     <string name="current_countdown">Current countdown: %1$s</string>
@@ -113,9 +131,6 @@
     <string name="high_contrast">High Contrast</string>
     <string name="use_pure_black_background_in_dark_mode">Use pure black background in dark mode</string>
     <string name="lottie_animation">Lottie Animation</string>
-    <string name="cache_cleared_success">Cache cleared successfully</string>
-    <string name="cache_clear_failed">Cache clear failed: %1$s</string>
-    <string name="delete_cache">Delete Cache</string>
     <string name="cache_auto_cleared">Cache exceeded 200M, automatically cleared</string>
     <string name="must_download_before_pin">Please download audio before adding to pinned sound area</string>
     <string name="auto_clear_failed">Auto clear failed: %1$s</string>
@@ -150,8 +165,13 @@
     <string name="installing">Installing</string>
     <string name="starting_installer">Starting installer…</string>
     <string name="install_failed">Install Failed</string>
-    <string name="join_group">Join Telegram Group</string>
-    <string name="join_group_description">Share your thoughts</string>
+    <string name="join_group">Community</string>
+    <string name="join_group_description">Follow me for latest updates</string>
+    <string name="community_dialog_title">Community</string>
+    <string name="open_github">GitHub</string>
+    <string name="open_github_description">View project source code</string>
+    <string name="join_telegram">Join Telegram Group</string>
+    <string name="join_telegram_description">Share your thoughts</string>
     <string name="load_failed">Load failed: %1$s</string>
     <string name="all_categories">All</string>
     <string name="privacy_policy_title">Privacy Policy</string>
@@ -165,6 +185,18 @@
 
 If you have any questions, please contact us through the in-app contact method.</string>
     <string name="wish_good_sleep">~ May you have sweet dreams ~</string>
+    
+    <!-- Auto Countdown -->
+    <string name="auto_countdown">Auto Countdown</string>
+    <string name="auto_countdown_description">Auto start timer when playing preset</string>
+    <string name="select_countdown_time">Select Countdown Time</string>
+    <string name="no_countdown">No Countdown</string>
+    <string name="countdown_30_minutes">30 Minutes</string>
+    <string name="countdown_45_minutes">45 Minutes</string>
+    <string name="countdown_60_minutes">60 Minutes</string>
+    <string name="countdown_1_hour">1 Hour</string>
+    <string name="countdown_2_hours">2 Hours</string>
+    <string name="current_setting">Current Setting</string>
     
     <!-- Floating Play Button -->
     <string name="collapse">Collapse</string>
@@ -208,6 +240,7 @@ If you have any questions, please contact us through the in-app contact method.<
     
     <!-- Preset Empty State Hint -->
     <string name="preset_empty_hint">Long press sound cards to add</string>
+    <string name="close">Close</string>
     
     <!-- Local Audio Permissions -->
     <string name="storage_permission_required">Storage Permission Required</string>
@@ -257,4 +290,260 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="tap_to_play">Tap to Play</string>
     <string name="refresh_success">Refresh Successful</string>
     <string name="refresh_failed">Refresh Failed</string>
+    
+    <!-- Healing Quotes - Morning -->
+    <string-array name="healing_quotes_morning">
+        <item>Good morning, may your day be full of energy</item>
+        <item>A new day, a new beginning</item>
+        <item>Dawn breaks, beauty arrives as promised</item>
+        <item>Greet the new day with a smile</item>
+        <item>Morning dew, crystal clear</item>
+        <item>Stay energized today</item>
+        <item>The early bird catches the worm</item>
+        <item>A beautiful day starts now</item>
+        <item>May every morning be full of hope</item>
+        <item>Dawn appears, all things revive</item>
+        <item>Good morning, be your best self</item>
+        <item>A new day, full of possibilities</item>
+        <item>Morning breeze brings good mood</item>
+        <item>Stay happy and joyful today</item>
+        <item>Good morning, my friend</item>
+        <item>Start a beautiful day with good mood</item>
+        <item>Good morning, may you always smile</item>
+        <item>Morning light glimmers, time stands still</item>
+        <item>A new day, new expectations</item>
+        <item>Rise early, shine bright</item>
+        <item>Morning dew, crystal clear</item>
+        <item>Good morning, live your life well</item>
+        <item>Morning breeze, refreshing mood</item>
+        <item>A new day, full of hope</item>
+        <item>Morning birdsong, pleasant to hear</item>
+        <item>Face challenges with positive attitude</item>
+        <item>Good morning, may everything go well</item>
+        <item>Dawn breaks, warm as always</item>
+        <item>Keep a good mood today</item>
+        <item>Morning serenity brings peace of mind</item>
+    </string-array>
+    
+    <!-- Healing Quotes - Afternoon -->
+    <string-array name="healing_quotes_afternoon">
+        <item>This is a world of flowers</item>
+        <item>Be a quiet person</item>
+        <item>Slow down, feel life\'s beauty</item>
+        <item>It\'s noon, time for a nap?</item>
+        <item>Give yourself a moment to relax</item>
+        <item>Tea time, enjoy the leisure</item>
+        <item>Drink more hot water, get moving</item>
+        <item>What are you thinking about right now?</item>
+        <item>Slow living is true living</item>
+        <item>Did you eat well today?</item>
+        <item>Give yourself a hug</item>
+        <item>Good afternoon, remember to rest</item>
+        <item>Say no to 996</item>
+        <item>What a wonderful spring, better than a dream</item>
+        <item>Take it slow, everything will come</item>
+        <item>Think sincerely, discern right from wrong</item>
+        <item>Give your soul a break</item>
+        <item>Did you forget to take a break?</item>
+        <item>Did you do the eye exercises?</item>
+        <item>I want to take you to my grandmother\'s house to watch the sunset together</item>
+        <item>Slow your pace, feel the present</item>
+        <item>When was the last time you bought flowers?</item>
+        <item>Give yourself time to unwind</item>
+        <item>Good afternoon, stay relaxed</item>
+        <item>Let me tell you a secret, my shoes don\'t have lift pads</item>
+        <item>Did you save a fox on a snowy mountain?</item>
+        <item>Neck sore? Do some neck circles</item>
+        <item>Plant a sunflower at your door</item>
+        <item>Hahahahahahaha</item>
+        <item>Give your tired soul a rest</item>
+    </string-array>
+    
+    <!-- Healing Quotes - Evening -->
+    <string-array name="healing_quotes_evening">
+        <item>What time is it now?</item>
+        <item>It\'s late, time to rest</item>
+        <item>Stars don\'t ask travelers, time rewards the devoted</item>
+        <item>Hard work all day, tuck yourself in and sleep well</item>
+        <item>Are you happy today? Rest well tonight either way</item>
+        <item>Sleep well tonight, wake up energized tomorrow</item>
+        <item>Today watch your diet, avoid greasy food</item>
+        <item>Good night, have sweet dreams</item>
+        <item>Night is gentle, so are you</item>
+        <item>Let go of today\'s worries, rest well</item>
+        <item>Good night, may the world treat you gently</item>
+        <item>Deep night, perfect for emptying your mind</item>
+        <item>Stars light up, illuminate your dreams</item>
+        <item>Evening breeze brings good mood</item>
+        <item>Night\'s tranquility heals everything</item>
+        <item>May you sleep dreamlessly till dawn</item>
+        <item>Did you daydream well today?</item>
+        <item>Good night, tomorrow is another beautiful day</item>
+        <item>Don\'t worry, take a few deep breaths</item>
+        <item>Relax, enjoy the night\'s serenity</item>
+        <item>Good night, sleep well</item>
+        <item>It\'s late, let your soul rest</item>
+        <item>Are there stars out tonight where you are?</item>
+        <item>Has the evening breeze arrived?</item>
+        <item>Night\'s gentleness belongs to you</item>
+        <item>Sleep well tonight, better tomorrow</item>
+        <item>Let me tell you a secret... ssshhh...</item>
+        <item>Good night, be your true self</item>
+        <item>Eat well, sleep well</item>
+        <item>Let go of fatigue, embrace sweet dreams</item>
+    </string-array>
+    
+    <!-- Weather Smart Recommend -->
+    <string name="weather_smart_recommend">Weather Smart Recommend</string>
+    <string name="weather_smart_recommend_desc">Auto-recommend white noise based on weather</string>
+    <string name="weather_quote">Give yourself a quiet moment</string>
+    <string name="weather_sound_mapping">Weather Sound Mapping</string>
+    <string name="save">Save</string>
+    <string name="weather_edit_title">Weather Sound Mapping</string>
+    <string name="weather_refresh">Refresh Weather</string>
+    <string name="weather_current">Current weather: %1$s</string>
+    <string name="weather_select_type">Select weather type</string>
+    <string name="weather_select_sound">Select white noise to play</string>
+    <string name="weather_loading">Fetching weather…</string>
+    <string name="weather_manual_select">Manual Weather Selection</string>
+    <string name="weather_location_failed">Location failed, please manually select current weather:</string>
+    <string name="weather_sound_rain">Rain</string>
+    <string name="weather_sound_light_rain">Light Rain</string>
+    <string name="weather_sound_heavy_rain">Heavy Rain</string>
+    <string name="weather_sound_thunder">Thunder</string>
+    <string name="weather_sound_wind">Wind</string>
+    <string name="weather_sound_birds">Birds</string>
+    <string name="weather_sound_river">River</string>
+    <string name="weather_sound_forest">Forest</string>
+    <string name="weather_sound_fireplace">Campfire</string>
+    <string name="weather_sound_waves">Waves</string>
+    <string name="weather_sound_jungle">Jungle</string>
+    <string name="weather_sound_drizzle">Drizzle</string>
+    <string name="weather_sound_walk_in_snow">Walk in Snow</string>
+    <string name="weather_sound_night">Night Village</string>
+    <string name="weather_sound_crickets">Crickets</string>
+    <string name="weather_sound_field">Field</string>
+    <string name="weather_sound_lake">Lake</string>
+    <string name="weather_sound_kitchen">Kitchen Cooking</string>
+    <string name="weather_sound_wind_chimes">Wind Chimes</string>
+    <string name="weather_sound_light_piano">Light Piano</string>
+    <string name="weather_sound_rain_on_car_roof">Rain on Car Roof</string>
+    <string name="weather_sound_rain_on_umbrella">Rain on Umbrella</string>
+    <string name="weather_sound_rain_on_tent">Rain on Tent</string>
+    <string name="weather_sound_rain_on_leaves">Rain on Leaves</string>
+    <string name="weather_sound_rain_on_raincoat">Rain on Raincoat</string>
+    <string name="weather_sound_rain_on_windowsill">Rain on Windowsill</string>
+    <string name="weather_sound_rain_on_wooden_house">Rain on Wooden House</string>
+    <string name="weather_sound_rain_while_driving">Rain While Driving</string>
+    <string name="weather_sound_rain_on_empty_street">Rain on Empty Street</string>
+    <string name="weather_sound_rain_on_eaves">Rain on Eaves</string>
+    <string name="weather_sound_heavy_rain_on_glass">Heavy Rain on Glass</string>
+    <string name="weather_category_nature">Nature</string>
+    <string name="weather_category_rain">Rain</string>
+    <string name="weather_category_other">Other</string>
+    <string name="weather_sunny_clear">Clear</string>
+    <string name="weather_sunny_night">Clear Night</string>
+    <string name="weather_cloudy_partly">Partly Cloudy</string>
+    <string name="weather_cloudy_overcast">Overcast</string>
+    <string name="weather_foggy">Fog</string>
+    <string name="weather_foggy_drizzle">Drizzle</string>
+    <string name="weather_rain_light">Light Rain</string>
+    <string name="weather_rain_moderate">Moderate Rain</string>
+    <string name="weather_rain_heavy">Heavy Rain</string>
+    <string name="weather_rain_shower">Rain Shower</string>
+    <string name="weather_snow_light">Light Snow</string>
+    <string name="weather_snow_moderate">Moderate Snow</string>
+    <string name="weather_snow_heavy">Heavy Snow</string>
+    <string name="weather_snow_sleet">Sleet</string>
+    <string name="weather_clear">Clear</string>
+    <string name="weather_partly_cloudy">Partly Cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_overcast">Overcast</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_freezing_fog">Freezing Fog</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_freezing_rain">Freezing Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_snow_grains">Snow Grains</string>
+    <string name="weather_shower">Shower</string>
+    <string name="weather_snow_shower">Snow Shower</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <string name="weather_thunderstorm_hail">Thunderstorm with Hail</string>
+    <string name="wind_speed">Wind</string>
+    <string name="humidity">Humidity</string>
+    <string name="feels_like">Feels like</string>
+    <string name="downloading">Downloading</string>
+    <string name="tap_to_download_and_play">Tap to download and play</string>
+    <string name="playing">Playing</string>
+    <string name="play_recommended">Play Recommended Audio</string>
+    <string name="download_and_play">Download and Play</string>
+    <string name="weather_location_required">Location permission required</string>
+    
+    <!-- Breathing Exercise -->
+    <string name="breathing_exercise">Breathe</string>
+    <string name="tap_to_start">Tap to Start</string>
+    <string name="inhale">Inhale...</string>
+    <string name="hold">Hold...</string>
+    <string name="exhale">Exhale...</string>
+    <string name="breath_count">Breath %1$d</string>
+    
+    <!-- Breathing Guide -->
+    <string name="breathing_guide_title">Breathing Exercise Guide</string>
+    <string name="breathing_guide_step1">1. Click the play button below to start</string>
+    <string name="breathing_guide_step2">2. Inhale (4s): Follow the expanding circle</string>
+    <string name="breathing_guide_step3">3. Hold (4s): Keep at maximum size</string>
+    <string name="breathing_guide_step4">4. Exhale (4s): Follow the shrinking circle</string>
+    <string name="breathing_guide_step5">5. Duration: 5 minutes, stops automatically</string>
+    <string name="got_it">Got it</string>
+    
+    <!-- Bottom Navigation Tabs -->
+    <string name="tab_white_noise">Noise</string>
+    <string name="tab_starsky">Stars</string>
+    <string name="tab_breathing">Breathe</string>
+    <string name="tab_settings">Settings</string>
+    
+    <!-- Tomato Timer -->
+    <string name="tomato_timer_title">Focus Timer</string>
+    <string name="tomato_today_completed">Today: %1$d pomodoros</string>
+    <string name="tomato_focus">Focus</string>
+    <string name="tomato_break">Break</string>
+    <string name="tomato_start">Start</string>
+    <string name="tomato_pause">Pause</string>
+    <string name="tomato_reset">Reset</string>
+
+    <!-- Flip Clock -->
+    <string name="flip_clock">Big Clock</string>
+    <string name="flip_clock_description">This feature requires sufficient battery</string>
+    <string name="flip_clock_back">Back</string>
+    <string name="flip_clock_countdown">Countdown</string>
+    <string name="flip_clock_cancel_countdown">Cancel countdown</string>
+    <string name="flip_clock_font">Font</string>
+    <string name="flip_clock_set_countdown">Set Countdown</string>
+    <string name="flip_clock_minutes_format">%1$d min</string>
+    <string name="flip_clock_start">Start</string>
+    <string name="flip_clock_cancel">Cancel</string>
+    <string name="flip_clock_select_font">Select Font</string>
+    <string name="flip_clock_font_bebas_neue_desc">Airport flight display style, extra bold</string>
+    <string name="flip_clock_font_oswald_desc">Industrial vintage style</string>
+    
+    <!-- Widget -->
+    <string name="add_quote_widget">Add Widget</string>
+    <string name="add_quote_widget_description">Add daily quote widget to home screen</string>
+    <string name="widget_add_hint">Long press on empty area of home screen, select "Widgets", find XMSLEEP to add the quote widget</string>
+    <string name="widget_add_hint_manual">Long press on empty area of home screen, select "Widgets", find XMSLEEP to add the quote widget</string>
+    <string name="widget_add_failed">Cannot open home screen, please add widget manually</string>
+    <string name="widget_description">Daily Quote - Inspirational quotes</string>
+    <string name="widget_default_quote">Life is not just about the present, but also about poetry and distant places.</string>
+    <string name="widget_default_author">Unknown</string>
+    <string name="widget_loading">Loading...</string>
+    <string name="widget_refresh_failed">Refresh failed</string>
+
+    <!-- Recent play dialog settings -->
+    <string name="show_recent_play_dialog">Recent Play</string>
+    <string name="show_recent_play_dialog_description">Show recent play popup on launch</string>
+    <string name="auto_play_on_start">Auto Play on Start</string>
+    <string name="auto_play_on_start_description">Auto play the last used preset audio when app starts</string>
+    <string name="auto_play_need_preset_tip">Please add audio in the preset module first</string>
+    <string name="tip">Tip</string>
 </resources>

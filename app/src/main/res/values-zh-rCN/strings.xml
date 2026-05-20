@@ -40,6 +40,23 @@
     
     <!-- 预设空状态提示 -->
     <string name="preset_empty_hint">长按音频卡片添加到此预设</string>
+    <string name="play_preset">播放预设</string>
+    <string name="pause_preset">暂停预设</string>
+    <string name="close">关闭</string>
+    
+    <!-- 背景设置 -->
+    <string name="background_settings">背景设置</string>
+    <string name="background_animation">背景动画</string>
+    <string name="select_background">选择背景</string>
+    <string name="no_background">无背景</string>
+    <string name="background_1">背景 1</string>
+    <string name="background_2">背景 2</string>
+    <string name="background_3">背景 3</string>
+    <string name="background_4">背景 4</string>
+    <string name="background_5">背景 5</string>
+    <string name="theme_color">主题颜色</string>
+    <string name="theme_color_disabled_hint">选择"无背景"后可切换主题颜色</string>
+    <string name="background_preview">预览背景</string>
     
     <!-- 本地音频权限 -->
     <string name="storage_permission_required">需要存储权限</string>

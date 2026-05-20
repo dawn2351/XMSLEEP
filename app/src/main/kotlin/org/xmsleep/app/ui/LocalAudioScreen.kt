@@ -9,9 +9,14 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.Settings
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +32,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -42,12 +49,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.xmsleep.app.R
 import org.xmsleep.app.audio.AudioManager
 import org.xmsleep.app.audio.LocalAudioPlayer
 import org.xmsleep.app.timer.TimerManager
+import org.xmsleep.app.utils.Logger
 
 /**
  * 本地音频数据类
@@ -213,7 +222,7 @@ fun LocalAudioScreen(
                         isRefreshing = false
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("LocalAudioScreen", "扫描音频文件失败", e)
+                    Logger.e("LocalAudioScreen", "扫描音频文件失败", e)
                     withContext(Dispatchers.Main) {
                         isLoading = false
                         isRefreshing = false
@@ -283,9 +292,9 @@ fun LocalAudioScreen(
                 newName
             }
             
-            android.util.Log.d("LocalAudioScreen", "开始重命名: ${audio.title} -> $finalName, URI: ${audio.uri}")
+            Logger.d("LocalAudioScreen", "开始重命名: ${audio.title} -> $finalName, URI: ${audio.uri}")
             val success = mediaService.renameMedia(audio.uri, finalName)
-            android.util.Log.d("LocalAudioScreen", "重命名结果: $success")
+            Logger.d("LocalAudioScreen", "重命名结果: $success")
             
             if (success) {
                 withContext(Dispatchers.Main) {
@@ -339,15 +348,15 @@ fun LocalAudioScreen(
     }
     // 初始权限检查
     LaunchedEffect(Unit) {
-        android.util.Log.d("LocalAudioScreen", "开始检查权限")
-        android.util.Log.d("LocalAudioScreen", "权限状态: hasPermission=$hasPermission")
+        Logger.d("LocalAudioScreen", "开始检查权限")
+        Logger.d("LocalAudioScreen", "权限状态: hasPermission=$hasPermission")
         
         if (hasPermission) {
-            android.util.Log.d("LocalAudioScreen", "权限已授予，开始扫描")
+            Logger.d("LocalAudioScreen", "权限已授予，开始扫描")
             scanAudioFiles(false)
         } else {
             // 未授予权限，显示引导界面
-            android.util.Log.d("LocalAudioScreen", "权限未授予，显示引导界面")
+            Logger.d("LocalAudioScreen", "权限未授予，显示引导界面")
             isLoading = false
         }
     }
@@ -355,7 +364,7 @@ fun LocalAudioScreen(
     // 监听权限状态变化，授予后自动扫描
     LaunchedEffect(hasPermission) {
         if (hasPermission && localAudioList.isEmpty()) {
-            android.util.Log.d("LocalAudioScreen", "权限已授予，触发扫描")
+            Logger.d("LocalAudioScreen", "权限已授予，触发扫描")
             scanAudioFiles(false)
         }
     }
@@ -432,14 +441,14 @@ fun LocalAudioScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 windowInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
                     .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = androidx.compose.ui.graphics.Color.Transparent
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -481,7 +490,7 @@ fun LocalAudioScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.padding(horizontal = 32.dp)
                         ) {
-                            EmptyStateAnimation(size = 240.dp)
+                            EmptyStateAnimation(animationSize = 240.dp)
                             Text(
                                 text = context.getString(R.string.storage_permission_required),
                                 style = MaterialTheme.typography.titleLarge,
@@ -510,7 +519,7 @@ fun LocalAudioScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            EmptyStateAnimation(size = 240.dp)
+                            EmptyStateAnimation(animationSize = 240.dp)
                             Text(
                                 text = context.getString(R.string.no_local_audio),
                                 style = MaterialTheme.typography.titleLarge,
@@ -908,16 +917,60 @@ fun LocalAudioItem(
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val localAudioPlayer = remember { LocalAudioPlayer.getInstance() }
+
+    // 按压动画
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "card_scale"
+    )
+    val cardAlpha by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "card_alpha"
+    )
+
+    // 播放进度状态
+    var currentProgress by remember { mutableIntStateOf(0) }
+    var totalDuration by remember { mutableIntStateOf(audio.duration.toInt()) }
+
+    // 定时更新播放进度
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (true) {
+                val progress = localAudioPlayer.getAudioProgress(audio.id)
+                if (progress != null) {
+                    currentProgress = progress.first
+                    totalDuration = progress.second
+                }
+                delay(500) // 每500ms更新一次
+            }
+        }
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .scale(scale)
+            .alpha(cardAlpha)
             .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
                 onClick = onCardClick,
                 onLongClick = onLongPress
             ),
         colors = CardDefaults.cardColors(
             containerColor = if (isPlaying) {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             }
@@ -966,30 +1019,67 @@ fun LocalAudioItem(
                     }
                 }
             }
-            
+
             if (isPlaying) {
                 Spacer(modifier = Modifier.height(12.dp))
+
+                // 进度滑块
+                val progressFraction = if (totalDuration > 0) {
+                    currentProgress.toFloat() / totalDuration.toFloat()
+                } else {
+                    0f
+                }
+
+                Slider(
+                    value = progressFraction,
+                    onValueChange = { newProgress ->
+                        val newPosition = (newProgress * totalDuration).toInt()
+                        localAudioPlayer.seekTo(audio.id, newPosition)
+                        currentProgress = newPosition
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AudioVisualizer(
-                        isPlaying = isPlaying,
-                        modifier = Modifier.size(24.dp, 16.dp),
-                        color = MaterialTheme.colorScheme.primary
+                    // 当前播放时间
+                    Text(
+                        text = formatDuration(currentProgress.toLong()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
-                    IconButton(
-                        onClick = onVolumeClick,
-                        modifier = Modifier.size(40.dp)
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = "调节音量",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                        AudioVisualizer(
+                            isPlaying = isPlaying,
+                            modifier = Modifier.size(24.dp, 16.dp),
+                            color = MaterialTheme.colorScheme.primary
                         )
+
+                        IconButton(
+                            onClick = onVolumeClick,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = "调节音量",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }

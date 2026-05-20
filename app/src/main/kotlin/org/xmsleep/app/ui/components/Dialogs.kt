@@ -17,65 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.xmsleep.app.R
 import org.xmsleep.app.i18n.LanguageManager
-
-/**
- * 缓存清理对话框
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ClearCacheDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    isClearing: Boolean
-) {
-    val context = LocalContext.current
-    AlertDialog(
-        onDismissRequest = { if (!isClearing) onDismiss() },
-        title = { Text(context.getString(R.string.clear_cache)) },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(context.getString(R.string.confirm_clear_cache))
-                if (isClearing) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        Text(
-                            context.getString(R.string.clearing),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    Text(
-                        context.getString(R.string.this_will_clear_all_cache_data),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                enabled = !isClearing
-            ) {
-                Text(context.getString(R.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isClearing
-            ) {
-                Text(context.getString(R.string.cancel))
-            }
-        }
-    )
-}
+import org.xmsleep.app.utils.Logger
 
 /**
  * 关于对话框 - 显示应用信息、版本、版权和使用说明
@@ -111,7 +53,7 @@ fun AboutDialog(
                 (packageInfo?.versionCode ?: 1)
             }
         } catch (e: Exception) {
-            android.util.Log.e("AboutDialog", "Error getting package info", e)
+            Logger.e("AboutDialog", "Error getting package info", e)
         }
     }
     
@@ -152,24 +94,6 @@ fun AboutDialog(
                     )
                     
                     HorizontalDivider()
-                    
-                    // 隐私政策
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            composeContext.getString(R.string.privacy_policy_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            composeContext.getString(R.string.privacy_policy),
-                            style = MaterialTheme.typography.bodyMedium,
-                            lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.4
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(8.dp))
                     
                     // 声音来源说明（简化版）
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -226,7 +150,7 @@ fun LanguageSelectionDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LanguageManager.Language.values().forEach { language ->
+                LanguageManager.Language.entries.forEach { language ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

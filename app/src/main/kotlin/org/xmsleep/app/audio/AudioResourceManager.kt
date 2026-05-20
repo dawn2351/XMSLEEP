@@ -2,7 +2,7 @@ package org.xmsleep.app.audio
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
+import org.xmsleep.app.utils.Logger
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -82,7 +82,7 @@ class AudioResourceManager private constructor(context: Context) {
                 } catch (e: Exception) {
                     // 缓存文件损坏，需要重新创建
                     needUpdate = true
-                    Log.w(TAG, "持久化缓存损坏，重新初始化: ${e.message}")
+                    Logger.w(TAG, "持久化缓存损坏，重新初始化: ${e.message}")
                 }
             }
             
@@ -93,7 +93,7 @@ class AudioResourceManager private constructor(context: Context) {
                 remoteManifest = fixManifestData(assetsManifest)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "初始化默认清单失败: ${e.message}")
+            Logger.e(TAG, "初始化默认清单失败: ${e.message}")
         }
     }
     
@@ -128,7 +128,7 @@ class AudioResourceManager private constructor(context: Context) {
                 savePersistedManifest(manifest)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "加载网络音频清单失败: ${e.javaClass.simpleName} - ${e.message}")
+            Logger.e(TAG, "加载网络音频清单失败: ${e.javaClass.simpleName} - ${e.message}")
             // 当网络失败时，返回持久化缓存作为备选
             loadPersistedManifest()
         }
@@ -186,7 +186,7 @@ class AudioResourceManager private constructor(context: Context) {
                     if (file.exists()) {
                         Uri.fromFile(file)
                     } else {
-                        Log.w(TAG, "导入的音频文件不存在: $path")
+                        Logger.w(TAG, "导入的音频文件不存在: $path")
                         null
                     }
                 }
@@ -229,7 +229,7 @@ class AudioResourceManager private constructor(context: Context) {
             savePersistedManifest(manifest)
             Result.success(manifest)
         } catch (e: Exception) {
-            Log.e(TAG, "刷新失败: ${e.message}")
+            Logger.e(TAG, "刷新失败: ${e.message}")
             Result.failure(e)
         }
     }
@@ -251,7 +251,7 @@ class AudioResourceManager private constructor(context: Context) {
                 null
             }
         } catch (e: Exception) {
-            Log.e(TAG, "从持久化缓存加载清单失败: ${e.message}")
+            Logger.e(TAG, "从持久化缓存加载清单失败: ${e.message}")
             null
         }
     }
@@ -279,7 +279,7 @@ class AudioResourceManager private constructor(context: Context) {
                 val json = gson.toJson(manifest)
                 manifestCacheFile.writeText(json)
             } catch (e: Exception) {
-                Log.e(TAG, "保存清单到持久化缓存失败: ${e.message}")
+                Logger.e(TAG, "保存清单到持久化缓存失败: ${e.message}")
             }
         }
     }

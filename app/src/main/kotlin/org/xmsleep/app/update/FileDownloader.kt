@@ -1,6 +1,7 @@
 package org.xmsleep.app.update
 
-import android.util.Log
+import org.xmsleep.app.utils.Logger
+import org.xmsleep.app.utils.NetworkClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,10 +18,8 @@ import java.util.concurrent.TimeUnit
  * 文件下载器
  */
 class FileDownloader {
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)  // 增加连接超时时间
-        .readTimeout(90, TimeUnit.SECONDS)    // 增加读取超时时间（APK文件较大）
-        .retryOnConnectionFailure(true)        // 启用连接失败重试
+    private val client = NetworkClient.newBuilder()
+        .readTimeout(90, TimeUnit.SECONDS)    // APK 文件较大，使用更长读取超时
         .build()
     
     companion object {
@@ -54,7 +53,7 @@ class FileDownloader {
         
         // 主URL失败，如果有回退URL，尝试回退URL
         if (fallbackUrl != null && fallbackUrl != url) {
-            Log.w("FileDownloader", "主URL下载失败，回退到备用URL: $fallbackUrl")
+            Logger.w("FileDownloader", "主URL下载失败，回退到备用URL: $fallbackUrl")
             val fallbackResult = downloadWithUrl(fallbackUrl, destinationFile, "备用URL")
             if (fallbackResult != null) {
                 return@withContext fallbackResult
@@ -113,22 +112,22 @@ class FileDownloader {
                 
                 _state.value = DownloadState.Success(destinationFile)
                 _progress.value = 1f
-                Log.d("FileDownloader", "下载成功 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT)")
+                Logger.d("FileDownloader", "下载成功 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT)")
                 return@withContext destinationFile
                 
             } catch (e: Exception) {
                 lastException = e
-                Log.w("FileDownloader", "下载失败 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
+                Logger.w("FileDownloader", "下载失败 (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
                 
                 // 如果不是最后一次尝试，等待后重试
                 if (attempt < MAX_RETRY_COUNT) {
                     val retryDelay = INITIAL_RETRY_DELAY * attempt // 递增延迟
                     delay(retryDelay)
-                    Log.d("FileDownloader", "等待 ${retryDelay}ms 后重试...")
+                    Logger.d("FileDownloader", "等待 ${retryDelay}ms 后重试...")
                     _state.value = DownloadState.Downloading(0f) // 重置状态
                 } else {
                     // 最后一次尝试失败
-                    Log.e("FileDownloader", "下载失败 (来源: $source)，已重试 $MAX_RETRY_COUNT 次: ${e.message}")
+                    Logger.e("FileDownloader", "下载失败 (来源: $source)，已重试 $MAX_RETRY_COUNT 次: ${e.message}")
                     _state.value = DownloadState.Failed(e.message ?: "Unknown error")
                 }
             }

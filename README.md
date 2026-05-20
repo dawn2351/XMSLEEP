@@ -23,24 +23,24 @@
 <table>
   <tr>
     <td align="center">
-      <img src="screenshots/1.jpg" alt="截图1" width="200"/>
+      <a href="screenshots/1.jpg"><img src="screenshots/1.jpg" alt="截图1" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/2.jpg" alt="截图2" width="200"/>
+      <a href="screenshots/2.jpg"><img src="screenshots/2.jpg" alt="截图2" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/3.jpg" alt="截图3" width="200"/>
+      <a href="screenshots/3.jpg"><img src="screenshots/3.jpg" alt="截图3" width="200"/></a>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="screenshots/4.jpg" alt="截图4" width="200"/>
+      <a href="screenshots/4.jpg"><img src="screenshots/4.jpg" alt="截图4" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/5.jpg" alt="截图5" width="200"/>
+      <a href="screenshots/5.jpg"><img src="screenshots/5.jpg" alt="截图5" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/6.jpg" alt="截图6" width="200"/>
+      <a href="screenshots/6.jpg"><img src="screenshots/6.jpg" alt="截图6" width="200"/></a>
     </td>
   </tr>
 </table>
@@ -95,19 +95,22 @@ XMSLEEP 是一个专注于白噪音播放的 Android 应用，提供多种自然
 
 ## 📦 当前版本
 
-- **版本号**: 2.1.5
-- **Version Code**: 35
+- **版本号**: 2.2.2
+- **Version Code**: 38
 - **最低支持**: Android 8.0 (API 26)
 - **目标版本**: Android 15 (API 35)
 
-### 🆕 最新更新 (v2.1.5)
+### 🆕 最新更新 (v2.2.2)
 
-- 🎵 **音频优化**：所有音频文件统一转换为 OGG 格式，提升兼容性
-- 📦 **文件压缩**：重新压缩大型音频文件，减小应用体积约 40%
-- 🔧 **路径修复**：修复部分音频文件路径问题，解决下载失败（HTTP 404）错误
-- 📝 **清单更新**：更新音频清单版本到 1.0.3，强制刷新缓存确保所有音频可用
-- 🐛 **Bug 修复**：修复 AudioResourceManager 编译错误
-- 🧹 **代码清理**：清理调试日志，优化代码质量
+#### 🎨 新功能
+- **一言一句桌面小组件**：新增桌面小组件，显示时间、每日名言和刷新按钮
+
+### 历史版本
+
+#### v2.2.1
+- **呼吸练习功能**：新增呼吸引导功能，帮助用户进行放松练习
+- **屏幕常亮功能**：优化屏幕常亮设置，支持保持屏幕常亮
+- **天气音频映射**：优化天气与音频的映射关系，不同天气对应不同音效
 
 ## 🚀 下载
 

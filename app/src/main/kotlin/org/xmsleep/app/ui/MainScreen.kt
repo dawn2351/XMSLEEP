@@ -1,5 +1,6 @@
 package org.xmsleep.app.ui
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -7,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -14,10 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -35,13 +41,34 @@ import org.xmsleep.app.theme.DarkModeOption
 import org.xmsleep.app.ui.settings.SettingsScreen
 import org.xmsleep.app.ui.settings.ThemeSettingsScreen
 import org.xmsleep.app.ui.starsky.StarSkyScreen
+import org.xmsleep.app.ui.breathing.BreathingScreen
+import org.xmsleep.app.ui.flipclock.FlipClockScreen
+import org.xmsleep.app.ui.tomato.TomatoTimerScreen
 import org.xmsleep.app.update.UpdateDialog
+import org.xmsleep.app.utils.Logger
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.materials.HazeMaterials
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import org.xmsleep.app.weather.WeatherSoundMapper
 
 /**
  * 主屏幕 - 包含底部导航和页面切换
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
 fun MainScreen(
     darkMode: DarkModeOption,
@@ -49,9 +76,11 @@ fun MainScreen(
     useDynamicColor: Boolean,
     useBlackBackground: Boolean,
     hideAnimation: Boolean,
+    backgroundSelection: org.xmsleep.app.ui.BackgroundSelection,
     soundCardsColumnsCount: Int,
     currentLanguage: LanguageManager.Language,
     audioPermissionLauncher: androidx.activity.compose.ManagedActivityResultLauncher<String, Boolean>,
+    locationPermissionLauncher: androidx.activity.compose.ManagedActivityResultLauncher<String, Boolean>,
     onAudioPermissionGranted: () -> Unit,
     onLanguageChange: (LanguageManager.Language) -> Unit,
     onDarkModeChange: (DarkModeOption) -> Unit,
@@ -59,12 +88,37 @@ fun MainScreen(
     onDynamicColorChange: (Boolean) -> Unit,
     onBlackBackgroundChange: (Boolean) -> Unit,
     onHideAnimationChange: (Boolean) -> Unit,
-    onSoundCardsColumnsCountChange: (Int) -> Unit
+    onBackgroundSelectionChange: (org.xmsleep.app.ui.BackgroundSelection) -> Unit,
+    onSoundCardsColumnsCountChange: (Int) -> Unit,
+    paletteColors: List<androidx.compose.ui.graphics.Color>
 ) {
     // 使用Navigator接口来管理导航
     val navigator = rememberXMSleepNavigator()
     var selectedItem by remember { mutableIntStateOf(1) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val isDarkTheme = isSystemInDarkTheme()
+    
+    // 获取 Activity - 使用 LifecycleOwner
+    // 注意：复用下面的 lifecycleOwner 变量
+    var mainActivity by remember { mutableStateOf<android.app.Activity?>(null) }
+    
+    // lifecycleOwner 在下面声明，这里直接使用
+    val lifecycleOwnerForActivity = LocalLifecycleOwner.current
+    
+    LaunchedEffect(lifecycleOwnerForActivity) {
+        mainActivity = lifecycleOwnerForActivity as? android.app.Activity
+    }
+    
+    // Haze状态用于毛玻璃效果
+    val hazeState = remember { HazeState() }
+    
+    // 底部导航栏的背景色（用于毛玻璃效果）
+    val navBarBackgroundColor = MaterialTheme.colorScheme.surface
+    
+    // 最近播放弹窗显示设置
+    var showRecentPlayDialogSetting by remember { 
+        mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getShowRecentPlayDialog(context))
+    }
     
     // 本地音频权限相关
     val requiredPermission = if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -121,6 +175,9 @@ fun MainScreen(
     // 用于强制收缩悬浮播放按钮的状态（当底部预设模块展开时）
     var forceCollapseFloatingButton by remember { mutableStateOf(false) }
     
+    // 设置页面内容隐藏状态（用于隐藏底部导航栏）
+    var isSettingsContentHidden by remember { mutableStateOf(false) }
+    
     // 自动更新检查（全局共享）
     val updateViewModel = remember { org.xmsleep.app.update.UpdateViewModel(context) }
     val updateState by updateViewModel.updateState.collectAsState()
@@ -138,17 +195,17 @@ fun MainScreen(
                 context.packageManager.getPackageInfo(context.packageName, 0)
             }
             val version = packageInfo?.versionName ?: "0.0.0"
-            android.util.Log.d("UpdateCheck", "读取到的版本号: $version")
+            Logger.d("UpdateCheck", "读取到的版本号: $version")
             version
         } catch (e: Exception) {
-            android.util.Log.e("UpdateCheck", "读取版本号失败，使用默认值", e)
+            Logger.e("UpdateCheck", "读取版本号失败，使用默认值", e)
             "0.0.0" // 使用最低版本号作为默认值，确保能检测到更新
         }
     }
     
     // 每次进入主页时静默检查更新（不自动弹窗）
     LaunchedEffect(Unit) {
-        android.util.Log.d("UpdateCheck", "开始后台静默检查更新，当前版本: $currentVersion")
+        Logger.d("UpdateCheck", "开始后台静默检查更新，当前版本: $currentVersion")
         // 静默检查更新，不弹窗，只更新状态和显示图标
         updateViewModel.startAutomaticCheckLatestVersion(currentVersion)
     }
@@ -156,14 +213,15 @@ fun MainScreen(
     // 监听生命周期，当应用恢复时检查更新和待安装的文件
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    val timerManager = remember { org.xmsleep.app.timer.TimerManager.getInstance() }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                android.util.Log.d("UpdateCheck", "Activity resumed, 检查更新和待安装文件")
+                Logger.d("UpdateCheck", "Activity resumed, 检查更新和待安装文件")
                 
                 // 先检查是否有待安装的文件且权限已授予
                 if (updateViewModel.checkPendingInstall()) {
-                    android.util.Log.d("UpdateCheck", "检测到待安装文件且权限已授予")
+                    Logger.d("UpdateCheck", "检测到待安装文件且权限已授予")
                     // 在协程中延迟一小段时间确保UI已准备好
                     scope.launch {
                         delay(500)
@@ -185,6 +243,20 @@ fun MainScreen(
     // 当前激活的预设（1, 2, 3）
     var activePreset by remember { 
         mutableIntStateOf(org.xmsleep.app.preferences.PreferencesManager.getActivePreset(context))
+    }
+    
+    // 天气推荐是否开启
+    var weatherEnabled by remember { mutableStateOf(WeatherSoundMapper.isEnabled(context)) }
+    
+    // 定期检查天气开关状态
+    LaunchedEffect(Unit) {
+        while (true) {
+            val enabled = WeatherSoundMapper.isEnabled(context)
+            if (enabled != weatherEnabled) {
+                weatherEnabled = enabled
+            }
+            delay(1000)
+        }
     }
     
     // 3个预设的固定声音列表
@@ -237,36 +309,6 @@ fun MainScreen(
         org.xmsleep.app.preferences.PreferencesManager.saveActivePreset(context, activePreset)
     }
     
-    // 初始化收藏声音，从SharedPreferences读取保存的数据
-    val favoriteSounds = remember { 
-        mutableStateOf(
-            org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context)
-                .mapNotNull { soundName ->
-                    try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(soundName) } catch (e: Exception) { null }
-                }.toMutableSet()
-        )
-    }
-    
-    // 在应用退出前保存收藏数据
-    DisposableEffect(Unit) {
-        onDispose {
-            org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(
-                context,
-                favoriteSounds.value.map { it.name }.toSet()
-            )
-        }
-    }
-    
-    // 监听收藏声音的变化，保存到SharedPreferences
-    LaunchedEffect(favoriteSounds.value) {
-        // 注意：这里直接使用 RemoteFavorites 存储是为了兼容远程音频的存储方式
-        // 实际应该有单独的本地收藏存储，但当前系统混用了远程和本地
-        org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(
-            context, 
-            favoriteSounds.value.map { it.name }.toSet()
-        )
-    }
-    
     // AudioManager实例（用于播放/暂停快捷播放的声音）
     val audioManager = remember { org.xmsleep.app.audio.AudioManager.getInstance() }
     
@@ -282,11 +324,11 @@ fun MainScreen(
                 
                 if (isPlaying) {
                     // 有音频播放，启动服务
-                    android.util.Log.d("MainScreen", "检测到音频播放，启动MusicService")
+                    Logger.d("MainScreen", "检测到音频播放，启动MusicService")
                     audioManager.startMusicService(context)
                 } else {
                     // 所有音频已停止
-                    android.util.Log.d("MainScreen", "所有音频已停止")
+                    Logger.d("MainScreen", "所有音频已停止")
                 }
             }
             delay(1000) // 每秒检查一次
@@ -296,7 +338,7 @@ fun MainScreen(
     // 应用退出时清理服务
     DisposableEffect(Unit) {
         onDispose {
-            android.util.Log.d("MainScreen", "MainScreen onDispose")
+            Logger.d("MainScreen", "MainScreen onDispose")
             // 如果没有播放中的声音，停止服务
             if (!audioManager.hasAnyPlayingSounds()) {
                 audioManager.stopMusicService(context)
@@ -306,22 +348,6 @@ fun MainScreen(
     
     // PreferencesManager实例（用于管理预设的远程声音）
     val preferencesManager = remember { org.xmsleep.app.preferences.PreferencesManager }
-    
-    // 应用启动时检查 SharedPreferences 中的收藏数据，确保数据一致
-    DisposableEffect(Unit) {
-        val savedFavorites = org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context)
-            .mapNotNull { soundName ->
-                try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(soundName) } catch (e: Exception) { null }
-            }.toMutableSet()
-        
-        // 如果读取到的数据与当前数据不一致，说明应用被关闭后重新打开，需要同步
-        if (savedFavorites.isNotEmpty() && favoriteSounds.value.isEmpty()) {
-            favoriteSounds.value = savedFavorites
-            android.util.Log.d("MainScreen", "从SharedPreferences恢复收藏数据: ${savedFavorites.size}个")
-        }
-        
-        onDispose { /* 不需要清理 */ }
-    }
     
     // 检查所有预设是否都为空（只有当所有3个预设都为空时才隐藏预设模块）
     // 修复：同时检查本地音频预设和远程音频固定状态
@@ -337,7 +363,7 @@ fun MainScreen(
     
     // 添加调试日志跟踪预设模块显示状态
     LaunchedEffect(defaultAreaHasSounds) {
-        android.util.Log.d("MainScreen", "预设模块显示状态变化: $defaultAreaHasSounds, 本地预设1=${preset1Sounds.value.size}, 预设2=${preset2Sounds.value.size}, 预设3=${preset3Sounds.value.size}, 远程固定=${allRemotePinned.size}")
+        Logger.d("MainScreen", "预设模块显示状态变化: $defaultAreaHasSounds, 本地预设1=${preset1Sounds.value.size}, 预设2=${preset2Sounds.value.size}, 预设3=${preset3Sounds.value.size}, 远程固定=${allRemotePinned.size}")
     }
     
     // 实时监听所有预设的远程音频固定状态变化
@@ -350,7 +376,7 @@ fun MainScreen(
             val newAllRemotePinned = newPreset1RemotePinned + newPreset2RemotePinned + newPreset3RemotePinned
             
             if (newAllRemotePinned != allRemotePinned) {
-                android.util.Log.d("MainScreen", "所有预设远程音频固定状态变化: ${allRemotePinned.size} -> ${newAllRemotePinned.size}")
+                Logger.d("MainScreen", "所有预设远程音频固定状态变化: ${allRemotePinned.size} -> ${newAllRemotePinned.size}")
                 preset1RemotePinned = newPreset1RemotePinned
                 preset2RemotePinned = newPreset2RemotePinned
                 preset3RemotePinned = newPreset3RemotePinned
@@ -376,55 +402,59 @@ fun MainScreen(
     // 监听当前路由，判断是否在二级页面
     val currentBackStackEntry by navigator.navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val isInSecondaryPage = currentRoute in listOf("theme", "favorite", "local_audio", "quoteHistory")
+    val isInSecondaryPage = currentRoute in listOf("theme", "local_audio", "quoteHistory", "flipclock", "tomato_timer")
     val isMainRoute = !isInSecondaryPage  // 主页面 = 不在二级页面
+    val isFlipClockPage = currentRoute == "flipclock"
+    
+    // 翻页时钟页面隐藏系统栏（延迟2秒执行）
+    var systemBarHidden by remember { mutableStateOf(false) }
+    LaunchedEffect(isFlipClockPage) {
+        if (isFlipClockPage) {
+            delay(2000) // 延迟2秒隐藏系统栏
+            systemBarHidden = true
+            mainActivity?.window?.let { window ->
+                val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                windowInsetsController?.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+                windowInsetsController?.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            systemBarHidden = false
+            mainActivity?.window?.let { window ->
+                val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                windowInsetsController?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            }
+        }
+    }
     
     // 使用ProvideNavigator提供导航器给子组件
     ProvideNavigator(navigator) {
         Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-        topBar = {
-            // TopBar已移除（视频源功能已删除）
-        },
-        floatingActionButton = {
-            // FloatingActionButton已移除（视频源功能已删除）
-        },
-        bottomBar = {
-            // 只在主页面显示底部导航栏
-            AnimatedVisibility(
-                visible = isMainRoute,
-                exit = fadeOut(animationSpec = tween(durationMillis = 200)),
-                enter = fadeIn(animationSpec = tween(durationMillis = 250, delayMillis = 50))
-            ) {
-                NavigationBar {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.LocalFlorist, null) },
-                        label = { Text(context.getString(R.string.white_noise)) },
-                        selected = selectedItem == 1,
-                        onClick = { selectedItem = 1 }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Satellite, null) },
-                        label = { Text(context.getString(R.string.star_sky)) },
-                        selected = selectedItem == 2,
-                        onClick = { selectedItem = 2 }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Settings, null) },
-                        label = { Text(context.getString(R.string.settings)) },
-                        selected = selectedItem == 3,
-                        onClick = { selectedItem = 3 }
-                    )
-                }
+            // 最底层：动画背景（如果用户选择了背景）
+            if (!hideAnimation) {
+                org.xmsleep.app.ui.components.AnimatedBackground(
+                    backgroundSelection = backgroundSelection,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
-        }
-    ) { paddingValues ->
-        // NavHost 始终存在，用于处理二级页面导航
-        NavHost(
-            navController = navigator.navController,
-            startDestination = "main",  // 主页面路由
-            modifier = Modifier.fillMaxSize()
-        ) {
+            
+            // 内容层 - 应用haze捕获内容用于模糊
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .haze(hazeState)
+            ) {
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    topBar = {},
+                    floatingActionButton = {},
+                    bottomBar = {} // 底部导航栏移到外面作为独立层
+                ) { paddingValues ->
+                    // NavHost 始终存在，用于处理二级页面导航
+                    NavHost(
+                        navController = navigator.navController,
+                        startDestination = "main",
+                        modifier = Modifier.fillMaxSize()
+                    ) {
             // 主页面路由（显示 AnimatedContent）
             composable("main") {
                 // 主页面：直接根据 selectedItem 切换内容（支持左右滑动切换）
@@ -442,15 +472,17 @@ fun MainScreen(
                                         // 向右滑动
                                         accumulatedDrag > threshold -> {
                                             when (selectedItem) {
-                                                2 -> selectedItem = 1  // 从星空到白噪音
-                                                3 -> selectedItem = 2  // 从设置到星空
+                                                2 -> selectedItem = 1  // 从繁星到白噪音
+                                                4 -> selectedItem = 2  // 从呼吸到繁星
+                                                3 -> selectedItem = 4  // 从设置到呼吸
                                             }
                                         }
                                         // 向左滑动
                                         accumulatedDrag < -threshold -> {
                                             when (selectedItem) {
-                                                1 -> selectedItem = 2  // 从白噪音到星空
-                                                2 -> selectedItem = 3  // 从星空到设置
+                                                1 -> selectedItem = 2  // 从白噪音到繁星
+                                                2 -> selectedItem = 4  // 从繁星到呼吸
+                                                4 -> selectedItem = 3  // 从呼吸到设置
                                             }
                                         }
                                     }
@@ -462,7 +494,14 @@ fun MainScreen(
                         },
                     transitionSpec = {
                         // 改进的过渡动画：使用滑动和淡入淡出效果
-                        val direction = if (targetState > initialState) 1 else -1
+                        // 切换到设置页 (tab 3) 时从右往左，其他情况保持原有逻辑
+                        val direction = if (targetState == 3 && initialState != 3) {
+                            1 // 切换到设置页时，新页面从右边进入
+                        } else if (initialState == 3 && targetState != 3) {
+                            -1 // 从设置页切出时，旧页面向右退出
+                        } else {
+                            if (targetState > initialState) 1 else -1
+                        }
                         slideInHorizontally(
                             initialOffsetX = { fullWidth -> fullWidth * direction },
                             animationSpec = tween(300, easing = FastOutSlowInEasing)
@@ -488,17 +527,18 @@ fun MainScreen(
                                     .fillMaxSize()
                                     .padding(paddingValues),
                                 hideAnimation = hideAnimation,
+                                backgroundSelection = backgroundSelection,
+                                onBackgroundSelectionChange = onBackgroundSelectionChange,
                                 columnsCount = soundCardsColumnsCount,
                                 onColumnsCountChange = onSoundCardsColumnsCountChange,
                                 preset1Sounds = preset1Sounds,
                                 preset2Sounds = preset2Sounds,
                                 preset3Sounds = preset3Sounds,
-                                favoriteSounds = favoriteSounds,
                                 activePreset = activePreset,
                                 onActivePresetChange = { newPreset -> activePreset = newPreset },
                                 hasAnyPresetItems = defaultAreaHasSounds,
-                                onNavigateToFavorite = {
-                                    navigator.navigateToFavorite()
+                                onNavigateToFlipClock = {
+                                    navigator.navigateToTomatoTimer()
                                 },
                                 onScrollDetected = {
                                     // 滚动时，触发浮动按钮收缩
@@ -552,6 +592,15 @@ fun MainScreen(
                                 }
                             )
                         }
+                        4 -> {
+                            // 呼吸页面
+                            BreathingScreen(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(paddingValues),
+                                activity = mainActivity
+                            )
+                        }
                         3 -> {
                             SettingsScreen(
                                 modifier = Modifier
@@ -559,6 +608,11 @@ fun MainScreen(
                                     .padding(paddingValues),
                                 hideAnimation = hideAnimation,
                                 onHideAnimationChange = onHideAnimationChange,
+                                backgroundSelection = backgroundSelection,
+                                onBackgroundSelectionChange = onBackgroundSelectionChange,
+                                paletteColors = paletteColors,
+                                currentColor = selectedColor,
+                                onColorChange = onColorChange,
                                 updateViewModel = updateViewModel,
                                 currentLanguage = currentLanguage,
                                 onLanguageChange = onLanguageChange,
@@ -579,8 +633,14 @@ fun MainScreen(
                                 onNavigateToQuoteHistory = {
                                     navigator.navigateToQuoteHistory()
                                 },
+                                onNavigateToFlipClock = {
+                                    navigator.navigateToFlipClock()
+                                },
                                 pinnedSounds = pinnedSounds,
-                                favoriteSounds = favoriteSounds
+                                locationPermissionLauncher = locationPermissionLauncher,
+                                onContentHiddenChange = { isHidden ->
+                                    isSettingsContentHidden = isHidden
+                                }
                             )
                         }
                         else -> { /* 不应该到达这里 */ }
@@ -611,55 +671,6 @@ fun MainScreen(
                 )
             }
             
-            composable("favorite") {
-                org.xmsleep.app.ui.FavoriteScreen(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    hideAnimation = hideAnimation,
-                    columnsCount = 3, // 收藏页面默认3列
-                    pinnedSounds = pinnedSounds,
-                    favoriteSounds = favoriteSounds,
-                    onBack = { navigator.popBackStack() },
-                    onScrollDetected = {
-                        // 滚动时收缩悬浮按钮
-                        shouldCollapseFloatingButton = true
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(100)
-                            shouldCollapseFloatingButton = false
-                        }
-                    },
-                    onPinnedChange = { sound, isPinned ->
-                        val currentSet = pinnedSounds.value.toMutableSet()
-                        if (isPinned) {
-                            // 检查是否已达到最大数量（3个）
-                            if (currentSet.size >= 3) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(R.string.max_3_sounds_limit),
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                currentSet.add(sound)
-                                pinnedSounds.value = currentSet
-                            }
-                        } else {
-                            currentSet.remove(sound)
-                            pinnedSounds.value = currentSet
-                        }
-                    },
-                    onFavoriteChange = { sound, isFavorite ->
-                        val currentSet = favoriteSounds.value.toMutableSet()
-                        if (isFavorite) {
-                            currentSet.add(sound)
-                        } else {
-                            currentSet.remove(sound)
-                        }
-                        favoriteSounds.value = currentSet
-                    }
-                )
-            }
-            
             composable("local_audio") {
                 org.xmsleep.app.ui.LocalAudioScreen(
                     modifier = Modifier.fillMaxSize(),
@@ -669,12 +680,107 @@ fun MainScreen(
             
             composable("quoteHistory") {
                 org.xmsleep.app.quote.QuoteHistoryScreen(
+                    onBack = { navigator.popBackStack() },
+                    onScrollDetected = {
+                        // 滚动时收缩悬浮按钮
+                        shouldCollapseFloatingButton = true
+                    }
+                )
+            }
+            
+            composable("flipclock") {
+                FlipClockScreen(
+                    onBack = { navigator.popBackStack() }
+                )
+            }
+            
+            composable("tomato_timer") {
+                TomatoTimerScreen(
                     onBack = { navigator.popBackStack() }
                 )
             }
         }
+                }
+            }
+            
+            // 底部导航栏 - 作为独立层，应用毛玻璃效果
+            // 只在主页面显示，且设置页面内容未隐藏时显示
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isMainRoute && !isSettingsContentHidden,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = androidx.compose.animation.fadeIn(animationSpec = tween(0)),
+                exit = androidx.compose.animation.fadeOut(animationSpec = tween(0))
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp)
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .hazeChild(
+                            state = hazeState
+                        ) {
+                            blurRadius = 10.dp
+                            noiseFactor = 0.16f
+                            backgroundColor = navBarBackgroundColor
+                        },
+                    color = Color.Transparent,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 0.5.dp,
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                        )
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .fillMaxWidth()
+                            .height(80.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 白噪音 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 1,
+                            onClick = { selectedItem = 1 },
+                            icon = Icons.Default.LocalFlorist,
+                            label = context.getString(R.string.tab_white_noise) // 显示文字
+                        )
+                        
+                        // 繁星 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 2,
+                            onClick = { selectedItem = 2 },
+                            icon = Icons.Default.Satellite,
+                            label = context.getString(R.string.tab_starsky) // 显示文字
+                        )
+                        
+                        // 呼吸 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 4,
+                            onClick = { selectedItem = 4 },
+                            icon = Icons.Default.SelfImprovement,
+                            label = context.getString(R.string.tab_breathing) // 显示文字
+                        )
+                        
+                        // 设置 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 3,
+                            onClick = { selectedItem = 3 },
+                            icon = Icons.Default.Settings,
+                            label = context.getString(R.string.tab_settings) // 显示文字
+                        )
+                    }
+                }
+            }
         }
-        
+
         // 全局浮动播放按钮（新版本 - 吸附式交互）
         org.xmsleep.app.ui.FloatingPlayButtonNew(
             audioManager = audioManager,
@@ -754,20 +860,62 @@ fun MainScreen(
             }
         )
         
-        // 最近播放弹窗 - 只在应用启动时显示一次
+        // 最近播放弹窗 - 只在应用启动时显示一次（根据用户设置）
         var showRecentPlayDialog by remember { mutableStateOf(false) }
-        var hasCheckedRecentPlay by remember { mutableStateOf(false) }
         
-        // 只在应用启动时检查一次是否显示弹窗
+        // 使用静态变量确保只在应用启动时检查一次
         LaunchedEffect(Unit) {
-            if (!hasCheckedRecentPlay) {
-                hasCheckedRecentPlay = true
-                val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
-                // 检查是否有最近播放记录
-                if (audioManager.hasRecentSounds(context)) {
-                    // 延迟500ms显示，确保UI已完全加载
-                    delay(500)
-                    showRecentPlayDialog = true
+            if (!hasCheckedRecentPlayOnLaunch) {
+                hasCheckedRecentPlayOnLaunch = true
+
+                // 1. 检查是否开启了自动播放功能
+                val autoPlayEnabled = org.xmsleep.app.preferences.PreferencesManager.getAutoPlayOnStart(context)
+                if (autoPlayEnabled) {
+                    // 获取当前激活预设的声音列表
+                    val soundsToPlay = when (activePreset) {
+                        1 -> preset1Sounds.value
+                        2 -> preset2Sounds.value
+                        3 -> preset3Sounds.value
+                        else -> preset1Sounds.value
+                    }
+
+                    // 检查远程音频
+                    val remotePinned = when (activePreset) {
+                        1 -> org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, 1)
+                        2 -> org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, 2)
+                        3 -> org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, 3)
+                        else -> emptySet()
+                    }
+
+                    if (soundsToPlay.isNotEmpty() || remotePinned.isNotEmpty()) {
+                        val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
+
+                        // 播放本地预设声音
+                        soundsToPlay.forEach { sound ->
+                            audioManager.playSound(context, sound)
+                        }
+
+                        // 检查是否设置了自动倒计时
+                        val autoCountdownMinutes = org.xmsleep.app.preferences.PreferencesManager.getAutoCountdownMinutes(context)
+                        if (autoCountdownMinutes > 0) {
+                            scope.launch {
+                                delay(500)
+                                timerManager.startTimer(autoCountdownMinutes)
+                            }
+                        }
+
+                        Logger.d("MainScreen", "自动播放预设 $activePreset 音频: 本地 ${soundsToPlay.size}, 远程 ${remotePinned.size}")
+                    }
+                } else {
+                    // 2. 如果没有开启自动播放，检查是否开启了最近播放弹窗
+                    val shouldShow = org.xmsleep.app.preferences.PreferencesManager.getShowRecentPlayDialog(context)
+                    if (shouldShow) {
+                        val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
+                        if (audioManager.hasRecentSounds(context)) {
+                            delay(500)
+                            showRecentPlayDialog = true
+                        }
+                    }
                 }
             }
         }
@@ -784,36 +932,94 @@ fun MainScreen(
                 }
             )
         }
+        
+        // 本地音频权限请求对话框
+        if (showPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = { showPermissionDialog = false },
+                icon = { Icon(Icons.Default.Folder, contentDescription = null) },
+                title = { Text(context.getString(R.string.storage_permission_required)) },
+                text = { Text(context.getString(R.string.permission_denied_hint)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            Logger.d("MainScreen", "点击授予权限按钮")
+                            showPermissionDialog = false
+                            // 使用从 MainActivity 传递的 audioPermissionLauncher 请求权限
+                            audioPermissionLauncher.launch(requiredPermission)
+                            permissionGrantedPending = true
+                            onAudioPermissionGranted()
+                            Logger.d("MainScreen", "权限请求已发送: $requiredPermission")
+                        }
+                    ) {
+                        Text(context.getString(R.string.request_permission))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPermissionDialog = false }) {
+                        Text(context.getString(R.string.cancel))
+                    }
+                }
+            )
         }
     }
+}
+
+/**
+ * 自定义导航栏项目组件
+ */
+@Composable
+private fun NavigationBarItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String?, // 改为可空类型
+    modifier: Modifier = Modifier
+) {
+    val iconColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    }
     
-    // 本地音频权限请求对话框
-    if (showPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
-            icon = { Icon(Icons.Default.Folder, contentDescription = null) },
-            title = { Text(context.getString(R.string.storage_permission_required)) },
-            text = { Text(context.getString(R.string.permission_denied_hint)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        android.util.Log.d("MainScreen", "点击授予权限按钮")
-                        showPermissionDialog = false
-                        // 使用从 MainActivity 传递的 audioPermissionLauncher 请求权限
-                        audioPermissionLauncher.launch(requiredPermission)
-                        permissionGrantedPending = true
-                        onAudioPermissionGranted()
-                        android.util.Log.d("MainScreen", "权限请求已发送: $requiredPermission")
-                    }
-                ) {
-                    Text(context.getString(R.string.request_permission))
-                }
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (selected) 1f else 0.95f,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
+        ),
+        label = "nav_item_scale"
+    )
+    
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
             },
-            dismissButton = {
-                TextButton(onClick = { showPermissionDialog = false }) {
-                    Text(context.getString(R.string.cancel))
-                }
-            }
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(24.dp),
+            tint = iconColor
         )
+        
+        // 只在 label 不为空时显示文字
+        if (label != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = iconColor
+            )
+        }
     }
 }
+
+private var hasCheckedRecentPlayOnLaunch = false

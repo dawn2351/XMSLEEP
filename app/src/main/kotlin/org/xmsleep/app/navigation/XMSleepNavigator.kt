@@ -29,13 +29,6 @@ interface XMSleepNavigator {
     }
     
     /**
-     * 导航到收藏页面
-     */
-    fun navigateToFavorite() {
-        navController.navigate("favorite")
-    }
-    
-    /**
      * 返回上一页
      */
     fun popBackStack() {
@@ -50,6 +43,20 @@ interface XMSleepNavigator {
             // 清除所有返回栈，只保留main页面
             popUpTo("main") { inclusive = true }
         }
+    }
+    
+    /**
+     * 导航到翻页时钟页面
+     */
+    fun navigateToFlipClock() {
+        navController.navigate("flipclock")
+    }
+    
+    /**
+     * 导航到番茄时钟页面
+     */
+    fun navigateToTomatoTimer() {
+        navController.navigate("tomato_timer")
     }
 }
 

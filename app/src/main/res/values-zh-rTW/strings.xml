@@ -8,11 +8,11 @@
     <string name="language_english">English</string>
     <string name="select_language">選擇語言</string>
     <string name="white_noise">白噪音</string>
+    <string name="breathing">呼吸</string>
     <string name="star_sky">繁星</string>
     <string name="star_sky_more_sounds_hint">會有更多聲音出現在這裡</string>
     <string name="settings">設定</string>
     <string name="theme_and_colors">主題與色彩</string>
-    <string name="adjust_all_volume">一鍵調整音量</string>
     <string name="clear_cache">快取清理</string>
     <string name="software_update">軟體更新</string>
     <string name="about_xmsleep">關於 XMSLEEP</string>
@@ -20,16 +20,17 @@
     <string name="cancel">取消</string>
     <string name="color_palette">調色板</string>
     <string name="confirm_clear_cache">確定要清理所有快取資料嗎？</string>
-    <string name="appearance">外觀</string>
+    <string name="appearance">特色</string>
     <string name="system">設定</string>
     <string name="other">其他</string>
-    <string name="appearance_mode_theme_color">外觀模式、主題色</string>
-    <string name="unified_adjust_all_sound_volume">統一調整音量</string>
+    <string name="appearance_mode_theme_color">模式、主題色</string>
+    <string name="feature_settings">特色功能</string>
+    <string name="feature_settings_description">自訂特色功能設定</string>
+    <string name="feature_dialog_title">特色功能</string>
+
     <string name="clear_app_cache_data">清理應用快取資料</string>
     <string name="check_and_update_to_latest_version">檢查並更新到最新版本</string>
     <string name="view_app_info_version_copyright">查看應用資訊、版本和版權</string>
-    <string name="apply_to_all_playing_sounds">將應用到所有正在播放的聲音</string>
-    <string name="volume_set_to">音量已設定為%1$d%%</string>
     <string name="clearing">正在清理…</string>
     <string name="this_will_clear_all_cache_data">這將清理應用的所有快取資料，包括圖片、影片、暫存檔案等。</string>
     <string name="version">版本: %1$s (Build %2$d)</string>
@@ -58,10 +59,24 @@
 
 • 版權聲明：本應用僅提供音訊播放功能，不擁有任何音訊內容的版權。所有音訊內容僅供個人學習和娛樂使用，請勿用於商業用途。如您發現任何音訊內容侵犯了您的版權，請聯繫我們，我們將及時處理。</string>
     <string name="technical_info_title">技術資訊</string>
-    <string name="copyright">© 2025 XMSLEEP. All rights reserved.\n\n本應用提供的音訊內容僅供個人學習和娛樂使用。\n請尊重相關音訊資源的版權，不得用於商業用途。</string>
+    <string name="copyright">© XMSLEEP. All rights reserved.\n\n本應用提供的音訊內容僅供個人學習和娛樂使用。\n請尊重相關音訊資源的版權，不得用於商業用途。</string>
     <string name="hide_animation">隱藏WebP動畫</string>
     <string name="hide_lottie_animation_in_sound_cards">隱藏聲音卡片中的WebP動畫</string>
-    <string name="white_noise_cards">白噪音卡片</string>
+    <string name="background_settings">背景設定</string>
+    <string name="background_animation">背景動畫</string>
+    <string name="select_background">選擇背景</string>
+    <string name="no_background">無背景</string>
+    <string name="background_1">背景 1</string>
+    <string name="background_2">背景 2</string>
+    <string name="background_3">背景 3</string>
+    <string name="background_4">背景 4</string>
+    <string name="background_5">背景 5</string>
+    <string name="background_6">背景 6</string>
+    <string name="background_7">背景 7</string>
+    <string name="theme_color">主題顏色</string>
+    <string name="theme_color_disabled_hint">選擇"無背景"後可切換主題顏色</string>
+    <string name="background_preview">預覽背景</string>
+    <string name="white_noise_cards">內建聲音</string>
     <string name="builtin_sounds_offline_hint">內建聲音無需連網直接聽</string>
     <string name="selected_count">已選擇（%1$d 個）</string>
     <string name="max_select_hint">最多可選3個到固定聲音區域</string>
@@ -93,12 +108,12 @@
     <string name="adjust_volume_for">調節音量 - %1$s</string>
     <string name="cancel_countdown">取消倒計時</string>
     <string name="minutes">%1$d分鐘</string>
-    <string name="set_as_default">固定</string>
-    <string name="cancel_default">取消固定</string>
+    <string name="set_as_default">添加預設</string>
+    <string name="cancel_default">取消預設</string>
     <string name="favorite">收藏</string>
     <string name="cancel_favorite">取消收藏</string>
-    <string name="pinned_success">已固定</string>
-    <string name="unpinned_success">已取消固定</string>
+    <string name="pinned_success">已添加預設</string>
+    <string name="unpinned_success">已取消預設</string>
     <string name="favorited_success">已收藏</string>
     <string name="unfavorited_success">已取消收藏</string>
     <string name="current_countdown">當前倒計時: %1$s</string>
@@ -132,9 +147,6 @@
     <string name="high_contrast">高對比度</string>
     <string name="use_pure_black_background_in_dark_mode">在深色模式下使用純黑背景</string>
     <string name="lottie_animation">Lottie 動畫</string>
-    <string name="cache_cleared_success">緩存清理成功</string>
-    <string name="cache_clear_failed">緩存清理失敗: %1$s</string>
-    <string name="delete_cache">刪除緩存</string>
     <string name="cache_auto_cleared">緩存已超過200M，自動清理完成</string>
     <string name="must_download_before_pin">請先下載音頻才能添加到固定聲音區域</string>
     <string name="auto_clear_failed">自動清理失敗: %1$s</string>
@@ -169,8 +181,13 @@
     <string name="installing">正在安裝</string>
     <string name="starting_installer">正在啟動安裝程序…</string>
     <string name="install_failed">安裝失敗</string>
-    <string name="join_group">加入Telegram群聊</string>
-    <string name="join_group_description">來表達你的想法</string>
+    <string name="join_group">社區</string>
+    <string name="join_group_description">關注我獲取最新資訊</string>
+    <string name="community_dialog_title">社區</string>
+    <string name="open_github">GitHub</string>
+    <string name="open_github_description">查看項目原始碼</string>
+    <string name="join_telegram">加入Telegram群聊</string>
+    <string name="join_telegram_description">來表達你的想法</string>
     <string name="load_failed">載入失敗: %1$s</string>
     <string name="all_categories">全部</string>
     <string name="privacy_policy_title">隱私政策</string>
@@ -185,6 +202,18 @@
 如有任何疑問，請透過應用內聯繫方式與我們聯繫。</string>
     <string name="wish_good_sleep">～願你有個好夢～</string>
     
+    <!-- 自動倒數計時 -->
+    <string name="auto_countdown">自動倒數計時</string>
+    <string name="auto_countdown_description">播放預設自動開始計時</string>
+    <string name="select_countdown_time">選擇倒數計時時間</string>
+    <string name="no_countdown">不設置</string>
+    <string name="countdown_30_minutes">30分鐘</string>
+    <string name="countdown_45_minutes">45分鐘</string>
+    <string name="countdown_60_minutes">60分鐘</string>
+    <string name="countdown_1_hour">1小時</string>
+    <string name="countdown_2_hours">2小時</string>
+    <string name="current_setting">當前設置</string>
+    
     <!-- 浮動播放按鈕 -->
     <string name="collapse">收起</string>
     <string name="expand">展開</string>
@@ -197,7 +226,22 @@
     <string name="added_to_preset">已添加 %1$d 個聲音到預設 %2$d</string>
     <string name="preset_full">預設 %1$d 已滿（最多10個）</string>
     <string name="no_playing_sounds">當前沒有正在播放的聲音</string>
-    
+
+    <!-- Flip Clock -->
+    <string name="flip_clock">大時鐘</string>
+    <string name="flip_clock_description">此功能需要保持電量充足</string>
+    <string name="flip_clock_back">返回</string>
+    <string name="flip_clock_countdown">倒計時</string>
+    <string name="flip_clock_cancel_countdown">取消倒計時</string>
+    <string name="flip_clock_font">字體</string>
+    <string name="flip_clock_set_countdown">設置倒計時</string>
+    <string name="flip_clock_minutes_format">%1$d分</string>
+    <string name="flip_clock_start">開始</string>
+    <string name="flip_clock_cancel">取消</string>
+    <string name="flip_clock_select_font">選擇字體</string>
+    <string name="flip_clock_font_bebas_neue_desc">機場航班顯示屏風格，極粗</string>
+    <string name="flip_clock_font_oswald_desc">工業復古風</string>
+
     <!-- 預設模組 -->
     <string name="preset_1">預設 1</string>
     <string name="preset_2">預設 2</string>
@@ -206,6 +250,10 @@
     
     <!-- 預設空狀態提示 -->
     <string name="preset_empty_hint">長按音頻卡片添加到此預設</string>
+    <string name="play_preset">播放預設</string>
+    <string name="pause_preset">暫停預設</string>
+    <string name="preset">預設</string>
+    <string name="close">關閉</string>
     
     <!-- 本地音頻權限 -->
     <string name="storage_permission_required">需要存儲權限</string>
@@ -255,4 +303,229 @@
     <string name="tap_to_play">點擊播放</string>
     <string name="refresh_success">刷新成功</string>
     <string name="refresh_failed">刷新失敗</string>
+    
+    <!-- 治愈句子 - 早上 -->
+    <string-array name="healing_quotes_morning">
+        <item>早安，願你今天充滿能量</item>
+        <item>新的一天，新的開始</item>
+        <item>晨光微露，美好如約而至</item>
+        <item>用微笑迎接嶄新的一天</item>
+        <item>早上好，我的朋友</item>
+        <item>今天也要元氣滿滿哦</item>
+        <item>早起的鳥兒有蟲吃，加油</item>
+        <item>美好的一天從現在開始</item>
+        <item>願你的每個早晨都充滿希望</item>
+        <item>晨曦初現，萬物復甦</item>
+        <item>早安，做最好的自己</item>
+        <item>新的一天，充滿無限可能</item>
+        <item>清晨的風，帶來好心情</item>
+        <item>今天也要開心快樂</item>
+        <item>做一個安靜的人</item>
+        <item>用好心情開啟美好一天</item>
+        <item>早安，願你笑容常在</item>
+        <item>晨光熹微，歲月靜好</item>
+        <item>新的一天，新的期待</item>
+        <item>早起三光，晚起三慌</item>
+        <item>清晨的露珠，晶瑩剔透</item>
+        <item>早安，今天也要努力生活</item>
+        <item>晨風輕拂，心情舒暢</item>
+        <item>新的一天，充滿希望</item>
+        <item>早晨的鳥鳴，悅耳動聽</item>
+        <item>用積極的心態迎接挑戰</item>
+        <item>早安，願你一切順利</item>
+        <item>晨曦微露，溫暖如初</item>
+        <item>今天也要保持好心情</item>
+        <item>清晨的寧靜，讓人心安</item>
+    </string-array>
+    
+    <!-- 治愈句子 - 中午 -->
+    <string-array name="healing_quotes_afternoon">
+        <item>這是一個花花的世界</item>
+        <item>做一個安靜的人</item>
+        <item>慢下來，感受生活的美好</item>
+        <item>中午了，你是不是該午休啦</item>
+        <item>給自己一個放鬆的時刻</item>
+        <item>下午茶時間，享受悠閒</item>
+        <item>多喝熱水，動起來</item>
+        <item>這一刻你在想什麼</item>
+        <item>慢生活，才是真生活</item>
+        <item>今天有好好吃飯嗎</item>
+        <item>給忙碌的自己一個擁抱</item>
+        <item>下午好，記得休息一下</item>
+        <item>拒絕996</item>
+        <item>好春光，不如夢一場</item>
+        <item>慢慢來，一切都來得及</item>
+        <item>真誠的明辨是非</item>
+        <item>給心靈放個假</item>
+        <item>是不是忘記摸魚了</item>
+        <item>眼播間操做了嗎</item>
+        <item>我想帶你去我的外婆家，一起看看日落</item>
+        <item>慢下腳步，感受當下</item>
+        <item>最近一次買花是什麼時候了</item>
+        <item>給自己一點時間放空</item>
+        <item>下午好，願你輕鬆愉快</item>
+        <item>告訴你個秘密，其實我的鞋子沒有增高墊</item>
+        <item>你是不是在雪山上救過一隻狐狸</item>
+        <item>脖子酸了嗎，左三圈右三圈來一遍</item>
+        <item>在門口種一株向日葵吧</item>
+        <item>哈哈哈哈哈哈哈</item>
+        <item>給疲憊的心靈一個休息</item>
+    </string-array>
+    
+    <!-- 治愈句子 - 晚上 -->
+    <string-array name="healing_quotes_evening">
+        <item>現在幾點了</item>
+        <item>夜深了，該休息了</item>
+        <item>星光不問趕路人，歲月不負有心人</item>
+        <item>辛苦一天了，蓋好被子，睡個好覺。</item>
+        <item>今天開心嗎？不管怎樣，今晚好好休息。</item>
+        <item>願你今夜安眠，明日醒來元氣滿滿</item>
+        <item>今日宜注意飲食，忌油膩</item>
+        <item>晚安，做個好夢</item>
+        <item>夜色溫柔，你也是</item>
+        <item>放下一天的煩惱，好好休息</item>
+        <item>晚安，願你被世界溫柔以待</item>
+        <item>夜深人靜，適合放空自己</item>
+        <item>星星點燈，照亮你的夢</item>
+        <item>晚風習習，帶來好心情</item>
+        <item>夜晚的靜謐，治癒一切</item>
+        <item>願你今夜無夢，一覺到天明</item>
+        <item>今天有沒有好好發呆</item>
+        <item>晚安，明天又是美好的一天</item>
+        <item>不要急，多來幾次深呼吸吧</item>
+        <item>放鬆身心，享受夜晚的寧靜</item>
+        <item>晚安，願你睡個好覺</item>
+        <item>夜深了，讓心靈休息</item>
+        <item>今夜你那裡有星星出現嗎</item>
+        <item>晚風來了嗎</item>
+        <item>夜晚的溫柔，屬於你</item>
+        <item>願你今夜好眠，明日更好</item>
+        <item>偷偷告訴你個秘密～密～密～～～</item>
+        <item>晚安，做最真實的自己</item>
+        <item>好好吃飯，好好睡覺</item>
+        <item>放下疲憊，擁抱美夢</item>
+    </string-array>
+    
+    <!-- 天氣智能推薦 -->
+    <string name="weather_smart_recommend">天氣智能推薦</string>
+    <string name="weather_smart_recommend_desc">根據天氣自動推薦白噪音</string>
+    <string name="weather_quote">給自己一個安靜的時刻</string>
+    <string name="weather_edit_title">天氣噪音映射</string>
+    <string name="weather_refresh">重新整理天氣</string>
+    <string name="weather_current">目前天氣：%1$s</string>
+    <string name="weather_select_type">選擇天氣類型</string>
+    <string name="weather_select_sound">選擇播放的白噪音</string>
+    <string name="weather_loading">正在獲取天氣…</string>
+    <string name="weather_manual_select">手動選擇天氣</string>
+    <string name="weather_location_failed">定位失敗，請手動選擇當前天氣：</string>
+    <string name="weather_sound_rain">雨聲</string>
+    <string name="weather_sound_light_rain">小雨</string>
+    <string name="weather_sound_heavy_rain">大雨</string>
+    <string name="weather_sound_thunder">雷聲</string>
+    <string name="weather_sound_wind">風聲</string>
+    <string name="weather_sound_birds">鳥叫</string>
+    <string name="weather_sound_river">河流</string>
+    <string name="weather_sound_forest">森林</string>
+    <string name="weather_sound_fireplace">篝火</string>
+    <string name="weather_sound_waves">海浪</string>
+    <string name="weather_sound_jungle">叢林</string>
+    <string name="weather_sound_drizzle">毛毛雨</string>
+    <string name="weather_sound_walk_in_snow">踩雪</string>
+    <string name="weather_sound_night">夜晚村莊</string>
+    <string name="weather_sound_crickets">蟋蟀</string>
+    <string name="weather_sound_field">田野</string>
+    <string name="weather_sound_lake">湖泊</string>
+    <string name="weather_sound_kitchen">廚房烹飪</string>
+    <string name="weather_sound_wind_chimes">風鈴</string>
+    <string name="weather_sound_light_piano">輕鋼琴</string>
+    <string name="weather_sound_rain_on_car_roof">雨打车頂</string>
+    <string name="weather_sound_rain_on_umbrella">雨打傘</string>
+    <string name="weather_sound_rain_on_tent">雨打帳篷</string>
+    <string name="weather_sound_rain_on_leaves">雨打樹葉</string>
+    <string name="weather_sound_rain_on_raincoat">雨打雨衣</string>
+    <string name="weather_sound_rain_on_windowsill">雨打窗台</string>
+    <string name="weather_sound_rain_on_wooden_house">雨打木屋</string>
+    <string name="weather_sound_rain_while_driving">開車遇雨</string>
+    <string name="weather_sound_rain_on_empty_street">雨打空街</string>
+    <string name="weather_sound_rain_on_eaves">雨打屋簷</string>
+    <string name="weather_sound_heavy_rain_on_glass">大雨打玻璃</string>
+    <string name="weather_category_nature">自然</string>
+    <string name="weather_category_rain">下雨</string>
+    <string name="weather_category_other">其他</string>
+    <string name="weather_sunny_clear">晴</string>
+    <string name="weather_sunny_night">晴晚</string>
+    <string name="weather_cloudy_partly">多雲</string>
+    <string name="weather_cloudy_overcast">陰</string>
+    <string name="weather_foggy">霧</string>
+    <string name="weather_foggy_drizzle">小霧</string>
+    <string name="weather_rain_light">小雨</string>
+    <string name="weather_rain_moderate">中雨</string>
+    <string name="weather_rain_heavy">大雨</string>
+    <string name="weather_rain_shower">陣雨</string>
+    <string name="weather_snow_light">小雪</string>
+    <string name="weather_snow_moderate">中雪</string>
+    <string name="weather_snow_heavy">大雪</string>
+    <string name="weather_snow_sleet">雨夾雪</string>
+    <string name="weather_clear">晴</string>
+    <string name="weather_partly_cloudy">晴間多雲</string>
+    <string name="weather_cloudy">多雲</string>
+    <string name="weather_overcast">陰</string>
+    <string name="weather_fog">霧</string>
+    <string name="weather_drizzle">小霧</string>
+    <string name="weather_freezing_fog">凍霧</string>
+    <string name="weather_rain">雨</string>
+    <string name="weather_freezing_rain">凍雨</string>
+    <string name="weather_snow">雪</string>
+    <string name="weather_snow_grains">雪粒</string>
+    <string name="weather_shower">陣雨</string>
+    <string name="weather_snow_shower">陣雪</string>
+    <string name="weather_thunderstorm">雷暴</string>
+    <string name="weather_thunderstorm_hail">雷暴伴冰雹</string>
+    <string name="wind_speed">風速</string>
+    <string name="humidity">濕度</string>
+    <string name="feels_like">體感</string>
+    <string name="downloading">正在下載</string>
+    <string name="tap_to_download_and_play">點擊下載並播放</string>
+    <string name="playing">正在播放</string>
+    <string name="play_recommended">播放推薦音樂</string>
+    <string name="download_and_play">下載並播放</string>
+    <string name="weather_location_required">需要定位權限獲取天氣</string>
+    <string name="weather_unknown">未知</string>
+    
+    <!-- 呼吸練習 -->
+    <string name="breathing_exercise">呼吸練習</string>
+    <string name="tap_to_start">點擊開始</string>
+    <string name="inhale">吸氣...</string>
+    <string name="hold">屏息</string>
+    <string name="exhale">呼氣...</string>
+    <string name="breath_count">第 %1$d 次呼吸</string>
+    
+    <!-- 番茄計時器 -->
+    <string name="tomato_timer_title">番茄時鐘</string>
+    <string name="tomato_today_completed">今日完成：%1$d 個番茄</string>
+    <string name="tomato_focus">專注</string>
+    <string name="tomato_break">休息</string>
+    <string name="tomato_start">開始</string>
+    <string name="tomato_pause">暫停</string>
+    <string name="tomato_reset">重置</string>
+    
+    <!-- 小組件 -->
+    <string name="add_quote_widget">添加小組件</string>
+    <string name="add_quote_widget_description">在桌面添加一言一句功能模組</string>
+    <string name="widget_add_hint">請長按桌面空白處，選擇「小組件」或「Widgets」，找到 XMSLEEP 添加一言一句組件</string>
+    <string name="widget_add_hint_manual">請長按桌面空白處，選擇「小組件」或「Widgets」，找到 XMSLEEP 添加一言一句組件</string>
+    <string name="widget_add_failed">無法打開桌面，請手動添加小組件</string>
+    <string name="widget_description">一言一句 - 每日名句</string>
+    <string name="widget_default_quote">生活不止眼前的苟且，還有詩和遠方。</string>
+    <string name="widget_default_author">佚名</string>
+    <string name="widget_loading">加載中...</string>
+    <string name="widget_refresh_failed">刷新失敗</string>
+    
+    <!-- 最近播放彈窗設定 -->
+    <string name="show_recent_play_dialog">最近播放</string>
+    <string name="show_recent_play_dialog_description">啟動時顯示最近播放彈窗</string>
+    <string name="auto_play_on_start">開啟應用自動播放</string>
+    <string name="auto_play_on_start_description">應用啟動時自動播放上次使用的預設音頻</string>
+    <string name="auto_play_need_preset_tip">請先在預設模組中添加音頻</string>
+    <string name="tip">提示</string>
 </resources>
