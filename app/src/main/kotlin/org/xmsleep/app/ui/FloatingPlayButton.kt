@@ -841,8 +841,6 @@ private fun FloatingPlayItemView(
     
     // 获取当前语言设置
     val currentLanguage = org.xmsleep.app.i18n.LanguageManager.getCurrentLanguage(context)
-    val isEnglish = currentLanguage == org.xmsleep.app.i18n.LanguageManager.Language.ENGLISH
-    val isTraditionalChinese = currentLanguage == org.xmsleep.app.i18n.LanguageManager.Language.TRADITIONAL_CHINESE
     
     // 获取本地化名称
     val displayName = when (item) {
@@ -870,11 +868,7 @@ private fun FloatingPlayItemView(
         }
         is FloatingPlayItem.Remote -> {
             // 远程声音：根据语言选择字段
-            when {
-                isTraditionalChinese && !item.sound.nameZhTW.isNullOrEmpty() -> item.sound.nameZhTW
-                isEnglish && !item.sound.nameEn.isNullOrEmpty() -> item.sound.nameEn
-                else -> item.sound.name
-            }
+            item.sound.getLocalizedName(currentLanguage)
         }
         is FloatingPlayItem.LocalAudio -> item.title
     }

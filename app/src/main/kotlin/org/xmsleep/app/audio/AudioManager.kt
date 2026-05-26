@@ -93,6 +93,9 @@ class AudioManager private constructor() {
     // 网络音频的元数据（用于恢复播放）
     private val remoteMetadataCache = java.util.concurrent.ConcurrentHashMap<String, Pair<org.xmsleep.app.audio.model.SoundMetadata, android.net.Uri>>()
     
+    // 标记是否只是暂停状态（用于倒计时保持）
+    private var isPausedState = false
+    
     // 网络音频的循环信息（用于无缝循环）
     private val remoteLoopInfo = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, Long>>() // soundId -> (loopStart, loopEnd) in milliseconds
     
@@ -633,6 +636,7 @@ class AudioManager private constructor() {
     // =========================================================================
 
     fun playSound(context: Context, sound: Sound) {
+        isPausedState = false  // 清除暂停标志（开始播放新音频）
         Logger.d(TAG, "playSound 被调用: ${sound.name}")
         try {
             if (applicationContext == null) {
@@ -844,6 +848,7 @@ class AudioManager private constructor() {
      * 暂停所有声音
      */
     fun pauseAllSounds() {
+        isPausedState = true  // 设置暂停标志
         try {
             // 关键修复：在暂停之前保存最近播放的声音列表
             // 此时 playingStates 还是 true，可以正确保存
@@ -913,6 +918,7 @@ class AudioManager private constructor() {
      * 立即停止所有声音播放（包括本地声音、远程声音和本地音频文件）
      */
     fun stopAllSounds() {
+        isPausedState = false  // 清除暂停标志
         try {
             Logger.d(TAG, "开始停止所有声音...")
             
@@ -1369,8 +1375,18 @@ class AudioManager private constructor() {
     
     /**
      * 检查是否有任何声音正在播放（本地+远程+本地音频文件）
+     * 如果是暂停状态（有音频被暂停但可恢复），也返回 true
      */
     fun hasAnyPlayingSounds(): Boolean {
+        // 如果只是暂停状态（有音频被暂停），返回 true（保持倒计时）
+        if (isPausedState) {
+            val hasAnyAudio = playingStates.values.any { it == true } || 
+                             remotePlayingStates.values.any { it == true } ||
+                             LocalAudioPlayer.getInstance().hasActiveAudio()
+            Logger.d(TAG, "hasAnyPlayingSounds [暂停状态]: $hasAnyAudio")
+            return hasAnyAudio
+        }
+        
         // 检查本地声音
         val hasLocalPlaying = playingStates.values.any { it == true }
         // 检查远程声音
@@ -1500,6 +1516,7 @@ class AudioManager private constructor() {
         metadata: org.xmsleep.app.audio.model.SoundMetadata,
         uri: android.net.Uri
     ) {
+        isPausedState = false  // 清除暂停标志（开始播放新音频）
         try {
             if (applicationContext == null) {
                 applicationContext = context.applicationContext
